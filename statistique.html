@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistique - Quiz Arena</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="page-stats">
+<div id="particles" aria-hidden="true"></div>
+<div id="topbar" aria-label="Actions rapides">
+  <button class="topbar-btn" onclick="showHistory()" type="button"><span>Historique</span></button>
+  <button class="topbar-btn" id="themeToggle" onclick="toggleTheme()" type="button"><span>Mode</span></button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="bonusPopup" aria-hidden="true"></div>
+<div id="quizmaster-wrap" aria-live="polite">
+  <div class="qm-bubble" id="qmBubble">Pret a jouer ?</div>
+  <div class="qm-character" id="qmChar" aria-hidden="true"><span></span></div>
+</div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+  <a class="nav-link" href="statistique.html" data-nav>Statistique</a>
+</nav>
+<main id="appRoot">
+<div id="StatsScreen" class="screen active">
+  <section class="Stats-content fade-in">
+    <div class="eyebrow">   Sauvegarde locales </div>
+    <h2>Stats de parties</h2>
+    <div id="statslist"></div>
+    <a class="btn btn-ghost full-btn" href="index.html">Retour à l'accueil</a>
+  </section>
+</div>
+
+</main>
+<script defer src="assets/js/router.js"></script>
+<script defer src="assets/js/app.js"></script>
+</body>
+</html>
