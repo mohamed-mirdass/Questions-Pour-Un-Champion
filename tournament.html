@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournoi - Quiz Arena</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/tournament.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="page-tournament">
+<div id="particles" aria-hidden="true"></div>
+<div id="topbar" aria-label="Actions rapides">
+  <button class="topbar-btn" onclick="toggleTheme()" type="button"><span>Mode</span></button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="bonusPopup" aria-hidden="true"></div>
+<div id="quizmaster-wrap" aria-live="polite">
+  <div class="qm-bubble" id="qmBubble">Prêt pour le tournoi ?</div>
+  <div class="qm-character" id="qmChar" aria-hidden="true"><span></span></div>
+</div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+
+<main id="appRoot">
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 : SETUP TOURNOI
+════════════════════════════════════════════ -->
+<div id="tournamentSetup" class="screen active">
+  <div class="trn-setup-wrap fade-in">
+    <div class="eyebrow">Mode compétition</div>
+    <h1 class="trn-title">TOURNOI</h1>
+    <p class="trn-subtitle">4 joueurs entrent — 1 seul sort champion. Format pro : matchs plus longs, classement complet, question décisive en cas d'égalité.</p>
+
+    <div class="card trn-setup-card">
+      <div class="label">Noms des joueurs</div>
+      <div class="players-grid">
+        <div class="trn-player-inp">
+          <span class="trn-seed seed-1">J1</span>
+          <input class="inp" id="tp1" placeholder="Joueur 1" maxlength="16" autocomplete="off">
+        </div>
+        <div class="trn-player-inp">
+          <span class="trn-seed seed-2">J2</span>
+          <input class="inp" id="tp2" placeholder="Joueur 2" maxlength="16" autocomplete="off">
+        </div>
+        <div class="trn-player-inp">
+          <span class="trn-seed seed-3">J3</span>
+          <input class="inp" id="tp3" placeholder="Joueur 3" maxlength="16" autocomplete="off">
+        </div>
+        <div class="trn-player-inp">
+          <span class="trn-seed seed-4">J4</span>
+          <input class="inp" id="tp4" placeholder="Joueur 4" maxlength="16" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="label">Niveau</div>
+      <div class="sel-group" id="trnLevelGroup">
+        <button class="sel-btn" data-val="Débutant" onclick="selectTrnLevel(this)">Débutant</button>
+        <button class="sel-btn" data-val="Intermédiaire" onclick="selectTrnLevel(this)">Intermédiaire</button>
+        <button class="sel-btn" data-val="Professionnel" onclick="selectTrnLevel(this)">Professionnel</button>
+      </div>
+
+      <div class="label">Thème</div>
+      <div class="sel-group" id="trnThemeGroup">
+        <button class="sel-btn" data-val="Tous" onclick="selectTrnTheme(this)">Tous</button>
+        <button class="sel-btn" data-val="Sport" onclick="selectTrnTheme(this)">Sport</button>
+        <button class="sel-btn" data-val="Musique" onclick="selectTrnTheme(this)">Musique</button>
+        <button class="sel-btn" data-val="Histoire-Géo" onclick="selectTrnTheme(this)">Histoire-Géo</button>
+        <button class="sel-btn" data-val="Animaux" onclick="selectTrnTheme(this)">Animaux</button>
+      </div>
+
+      <div class="trn-format-info card soft-card" style="margin-top:18px;">
+        <div class="trn-format-title">Format du tournoi</div>
+        <div class="trn-format-steps">
+          <div class="trn-step"><span class="trn-step-num">1</span><span>Demi-finale A — J1 vs J2 (meilleur de 7)</span></div>
+          <div class="trn-step"><span class="trn-step-num">2</span><span>Demi-finale B — J3 vs J4 (meilleur de 7)</span></div>
+          <div class="trn-step"><span class="trn-step-num">3</span><span>Match 3e place — les 2 perdants</span></div>
+          <div class="trn-step"><span class="trn-step-num">4</span><span>Finale — les 2 gagnants 🏆</span></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-start" onclick="startTournament()" type="button">⚔️ Lancer le tournoi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2 : BRACKET (tableau)
+════════════════════════════════════════════ -->
+<div id="tournamentBracket" class="screen">
+  <div class="trn-bracket-wrap fade-in">
+    <div class="eyebrow">Tableau du tournoi</div>
+    <h2 class="section-title" id="bracketTitle">Demi-finales</h2>
+    <div class="bracket-visual" id="bracketVisual"></div>
+    <button class="btn btn-primary" id="bracketStartBtn" onclick="launchCurrentMatch()" type="button">▶ Commencer le match</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 : MATCH EN COURS
+════════════════════════════════════════════ -->
+<div id="tournamentMatch" class="screen">
+  <div class="content game-stage">
+    <!-- En-tête match -->
+    <div class="trn-match-header card soft-card">
+      <div class="trn-match-label" id="matchLabel">Demi-finale A</div>
+      <div class="trn-match-vs">
+        <div class="trn-match-player" id="matchP1Name">Joueur 1</div>
+        <div class="trn-vs-badge">VS</div>
+        <div class="trn-match-player" id="matchP2Name">Joueur 2</div>
+      </div>
+      <div class="trn-match-scores">
+        <div class="trn-match-score" id="matchS1">0</div>
+        <div class="trn-match-sep">—</div>
+        <div class="trn-match-score" id="matchS2">0</div>
+      </div>
+      <div class="trn-match-progress" id="matchProgress">Meilleur de 7 — 0 / 7</div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-wrap card soft-card">
+      <div class="timer-meta">
+        <div class="diff-meter" id="trnDiffMeter">
+          <span>Difficulté</span>
+          <div class="diff-dot" id="tdd1"></div>
+          <div class="diff-dot" id="tdd2"></div>
+          <div class="diff-dot" id="tdd3"></div>
+        </div>
+        <div class="q-counter" id="trnQCounter">Q 1 / 7</div>
+      </div>
+      <div class="timer-bar-bg"><div class="timer-bar" id="trnTimerBar"></div></div>
+      <div class="timer-text" id="trnTimerText">20s</div>
+    </div>
+
+    <!-- Question -->
+    <section class="question-box">
+      <div id="trnDiffBadge" class="diff-badge diff-easy">DÉBUTANT</div>
+      <div class="question-text" id="trnQuestionText">Prêt ?</div>
+    </section>
+
+    <!-- Buzzers -->
+    <div class="buzzer-area" id="trnBuzzerArea">
+      <div class="trn-buzzer-wrap">
+        <div class="trn-buzzer-label" id="trnBuzzLabel1"></div>
+        <button class="buzzer trn-buzzer-p1" id="trnBuzzer1" onclick="trnBuzz(0)" type="button">BUZZ</button>
+        <div class="trn-key-hint" id="trnKey1">Touche S</div>
+      </div>
+      <div class="trn-buzzer-wrap">
+        <div class="trn-buzzer-label" id="trnBuzzLabel2"></div>
+        <button class="buzzer trn-buzzer-p2" id="trnBuzzer2" onclick="trnBuzz(1)" type="button">BUZZ</button>
+        <div class="trn-key-hint" id="trnKey2">Touche K</div>
+      </div>
+    </div>
+
+    <!-- Réponses -->
+    <div class="answers-grid" id="trnAnswersGrid"></div>
+  </div>
+
+  <!-- Countdown overlay match -->
+  <div class="trn-countdown-overlay" id="trnCountdownOverlay" style="display:none;">
+    <div class="trn-countdown-inner">
+      <div class="trn-countdown-label" id="trnCountdownLabel">Le match commence</div>
+      <div class="trn-countdown-num" id="trnCountdownNum">3</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4 : RÉSULTAT D'UN MATCH
+════════════════════════════════════════════ -->
+<div id="tournamentMatchResult" class="screen">
+  <div class="trn-match-result-wrap fade-in">
+    <div class="trn-result-trophy" id="resultTrophy">🏆</div>
+    <div class="trn-result-title" id="resultTitle">Victoire !</div>
+    <div class="trn-result-winner" id="resultWinner">Joueur 1</div>
+    <div class="trn-result-detail" id="resultDetail">remporte la demi-finale</div>
+    <div class="trn-result-scores card soft-card" id="resultScores"></div>
+    <button class="btn btn-primary" id="resultNextBtn" onclick="nextMatchOrFinal()" type="button">Continuer →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 5 : PALMARÈS FINAL
+════════════════════════════════════════════ -->
+<div id="tournamentFinal" class="screen">
+  <div class="results-content fade-in">
+    <div class="eyebrow">Tournoi terminé</div>
+    <div class="results-title">🏆 Palmarès</div>
+    <div class="trn-podium" id="trnPodium"></div>
+    <div class="trn-full-stats" id="trnFullStats"></div>
+    <div class="results-btns" style="margin-top:28px;">
+      <button class="btn btn-primary" onclick="restartTournament()" type="button">🔄 Nouveau tournoi</button>
+      <a class="btn btn-ghost" href="index.html">Accueil</a>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown screen -->
+<div id="trnCountdownScreen" class="screen">
+  <div class="countdown-stage">
+    <div class="countdown-label" id="trnCdLabel">Le tournoi commence</div>
+    <div id="trnCdNum" class="trn-cd-num">3</div>
+  </div>
+</div>
+
+</main>
+
+<script defer src="assets/js/router.js"></script>
+<script defer src="assets/js/app.js"></script>
+<script defer src="assets/js/tournament.js"></script>
+</body>
+</html>

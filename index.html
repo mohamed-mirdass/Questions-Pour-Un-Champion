@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Questions Pour Un Champion</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="page-home">
+<div id="particles" aria-hidden="true"></div>
+<div id="topbar" aria-label="Actions rapides">
+  <button class="topbar-btn" onclick="showHistory()" type="button"><span>Historique</span></button>
+  <button class="topbar-btn" id="themeToggle" onclick="toggleTheme()" type="button"><span>Mode</span></button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="bonusPopup" aria-hidden="true"></div>
+<div id="quizmaster-wrap" aria-live="polite">
+  <div class="qm-bubble" id="qmBubble">Pret a jouer ?</div>
+  <div class="qm-character" id="qmChar" aria-hidden="true"><span></span></div>
+</div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+<div id="homeScreen" class="screen active">
+  <section class="hero-panel">
+    <div class="hero-copy fade-in">
+      <div class="eyebrow">S2 Edition · quiz multijoueur</div>
+      <h1>Quiz Arena</h1>
+      <p>Un plateau digital nerveux pour quatre joueurs, avec buzzers clavier, manches a paris, mission speedrun, jokers et scoring dynamique.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#setupCard">Configurer la partie</a>
+        <button class="btn btn-ghost" onclick="startMission()" type="button">Mission rapide</button>
+      </div>
+    </div>
+    <div class="arena-visual" aria-hidden="true">
+      <div class="arena-ring"></div>
+      <div class="arena-orbit orbit-one"></div>
+      <div class="arena-orbit orbit-two"></div>
+      <div class="arena-core">BUZZ</div>
+      <div class="arena-console">
+        <span>Live Arena</span>
+        <strong>4 joueurs</strong>
+      </div>
+    </div>
+  </section>
+  <section class="experience-strip fade-in" aria-label="Points forts du jeu">
+    <article>
+      <span>01</span>
+      <strong>Plateau multijoueur</strong>
+      <p>Quatre buzzers clavier, une main gagnante, zéro confusion.</p>
+    </article>
+    <article>
+      <span>02</span>
+      <strong>Modes intelligents</strong>
+      <p>Normal, Paris, Rapidité et Mixte pour varier la tension.</p>
+    </article>
+    <article>
+      <span>03</span>
+      <strong>Jokers tactiques</strong>
+      <p>Élimine, révèle, économise tes coins et choisis ton moment.</p>
+    </article>
+    <article>
+      <span>04</span>
+      <strong>Mission solo</strong>
+      <p>Un speedrun pour s'entraîner et charger la réserve de coins.</p>
+    </article>
+  </section>
+  <div class="content home-layout">
+    <section class="card setup-card fade-in" id="setupCard">
+      <div class="section-kicker">Configuration</div>
+      <h2 class="section-title">Nouvelle partie</h2>
+      <div class="coins-display">
+        <span class="coins-icon">Coins</span>
+        <div>
+          <div class="coins-val" id="globalCoins">0</div>
+          <div class="coins-label">credit de jokers</div>
+        </div>
+        <div class="coins-reset" id="coinsResetInfo"></div>
+      </div>
+      <div class="label">Niveau</div>
+      <div class="sel-group" id="levelGroup">
+        <button class="sel-btn" data-val="Débutant" type="button">Débutant</button>
+        <button class="sel-btn" data-val="Intermédiaire" type="button">Intermediaire</button>
+        <button class="sel-btn" data-val="Professionnel" type="button">Pro</button>
+      </div>
+      <div class="label">Theme</div>
+      <div class="sel-group" id="themeGroup">
+        <button class="sel-btn" data-val="Sport" type="button">Sport</button>
+        <button class="sel-btn" data-val="Musique" type="button">Musique</button>
+        <button class="sel-btn" data-val="Histoire-Géo" type="button">Histoire-Geo</button>
+        <button class="sel-btn" data-val="Animaux" type="button">Animaux</button>
+      </div>
+      <div class="label">Joueurs</div>
+      <div class="players-grid">
+        <input class="inp" id="p1in" placeholder="Joueur 1 · touche S">
+        <input class="inp" id="p2in" placeholder="Joueur 2 · touche K">
+        <input class="inp" id="p3in" placeholder="Joueur 3 · touche D">
+        <input class="inp" id="p4in" placeholder="Joueur 4 · touche L">
+      </div>
+      <div class="label">Voix du Quizmaster</div>
+      <div class="voice-row">
+        <select id="voiceSelect" class="inp"><option value="">Chargement des voix...</option></select>
+        <button class="btn btn-ghost" onclick="testVoice()" type="button">Test</button>
+      </div>
+      <div class="label">Mode de jeu</div>
+      <div class="sel-group mode-grid" id="gameModeGroup">
+        <button class="sel-btn active" data-val="normal" onclick="selectGameMode(this)" type="button">Normal</button>
+        <button class="sel-btn" data-val="bet" onclick="selectGameMode(this)" type="button">Paris</button>
+        <button class="sel-btn" data-val="speed" onclick="selectGameMode(this)" type="button">Rapidite</button>
+        <button class="sel-btn" data-val="mixed" onclick="selectGameMode(this)" type="button">Mixte</button>
+      </div>
+      <div id="fetchStatus"><div class="fetch-status"><div class="fetch-dot local"></div><span>Questions integrees, JSON externe si disponible</span></div></div>
+      <div class="setup-actions">
+        <button class="btn btn-ghost" onclick="fillDemoLobby()" type="button">Remplir démo</button>
+        <button class="btn btn-primary btn-start" onclick="startGame()" type="button">Lancer la partie</button>
+      </div>
+    </section>
+    <aside class="home-side">
+      <section class="card rules-box fade-in">
+        <div class="section-kicker">Regles</div>
+        <h3>Plateau local</h3>
+        <ul>
+          <li>4 joueurs, un buzzer chacun.</li>
+          <li>Le premier buzz debloque les reponses.</li>
+          <li>Le chrono s'adapte aux performances.</li>
+          <li>Les bonnes reponses donnent points et coins.</li>
+          <li>Les jokers se paient avec les coins.</li>
+        </ul>
+        <div class="keys-grid">
+          <div class="key-item"><span class="key-badge">S</span> J1</div>
+          <div class="key-item"><span class="key-badge">K</span> J2</div>
+          <div class="key-item"><span class="key-badge">D</span> J3</div>
+          <div class="key-item"><span class="key-badge">L</span> J4</div>
+        </div>
+        <a class="btn btn-ghost full-btn" href="rules.html">Voir toutes les règles</a>
+      </section>
+      <section class="card mission-teaser fade-in">
+        <div class="section-kicker">Mode mission</div>
+        <h3>Speedrun solo</h3>
+        <p>Enchaine dix questions sous pression pour charger ta reserve de jokers avant le vrai match.</p>
+        <button id="missionBtn" onclick="startMission()" type="button">Demarrer mission</button>
+      </section>
+      <section class="card director-note fade-in">
+        <div class="section-kicker">Conseil pro</div>
+        <h3>Joue avec rythme</h3>
+        <p>Annonce la catégorie, laisse le Quizmaster lire la question, puis garde les buzzers visibles pour créer une vraie ambiance de plateau.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div id="gameScreen" class="screen">
+  <div class="content game-stage">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="timer-wrap card soft-card">
+      <div class="timer-meta">
+        <div class="diff-meter" id="diffMeter"><span>Difficulte</span><div class="diff-dot" id="dd1"></div><div class="diff-dot" id="dd2"></div><div class="diff-dot" id="dd3"></div></div>
+        <div class="q-counter" id="qCounter">Q 1 / 10</div>
+      </div>
+      <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+      <div class="timer-text" id="timerText">30s</div>
+    </div>
+    <section class="question-box">
+      <div id="diffBadge" class="diff-badge diff-easy">DEBUTANT</div>
+      <div class="question-text" id="questionText">Pret ?</div>
+    </section>
+    <div class="buzzer-area">
+      <button class="buzzer" id="buzzerBtn" onclick="buzzClick()" type="button">BUZZ</button>
+      <div class="buzzer-hint" id="buzzerHint">Touches S / K / D / L</div>
+    </div>
+    <div class="joker-bar" id="jokerBar" style="display:none;">
+      <button class="joker-btn joker-50" id="j50" onclick="useJoker(50)" type="button"><span>Eliminer 1</span><span class="joker-coins">50</span></button>
+      <button class="joker-btn joker-70" id="j70" onclick="useJoker(70)" type="button"><span>Eliminer 2</span><span class="joker-coins">70</span></button>
+      <button class="joker-btn joker-100" id="j100" onclick="useJoker(100)" type="button"><span>Reveler</span><span class="joker-coins">100</span></button>
+    </div>
+    <div class="answers-grid" id="answersGrid"></div>
+  </div>
+</div>
+<div id="missionScreen" class="screen">
+  <div class="mission-header fade-in">
+    <div class="eyebrow">Mode mission</div>
+    <h2>Speedrun de precision</h2>
+    <p>Reponds vite, garde ta serie, empoche des coins.</p>
+  </div>
+  <div class="card mission-card fade-in">
+    <div class="mission-progress"><span id="missionQNum">Question 1 / 10</span><span class="mission-streak" id="missionStreak">0 streak</span></div>
+    <div class="mission-timer"><div class="mission-time" id="missionTime">8</div><div class="mission-bar-bg"><div class="mission-bar" id="missionBar"></div></div></div>
+    <div class="mission-q" id="missionQ">Chargement...</div>
+    <div class="mission-answers" id="missionAnswers"></div>
+    <div class="mission-reward" id="missionReward" style="display:none;">
+      <div class="reward-medal">Mission complete</div>
+      <div class="mission-reward-coins" id="missionRewardCoins">+150 coins</div>
+      <button class="btn btn-primary" onclick="showScreen('homeScreen')" type="button">Retour accueil</button>
+    </div>
+  </div>
+</div>
+<div id="resultsScreen" class="screen">
+  <div class="results-content fade-in">
+    <div class="eyebrow">Fin de partie</div>
+    <div class="results-title">Resultats finaux</div>
+    <div class="podium" id="podium"></div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="results-btns">
+      <button class="btn btn-primary" onclick="restartGame()" type="button">Rejouer</button>
+      <button class="btn btn-ghost" onclick="showScreen('homeScreen')" type="button">Accueil</button>
+    </div>
+  </div>
+</div>
+<div id="historyScreen" class="screen">
+  <section class="history-content fade-in">
+    <div class="eyebrow">Archives locales</div>
+    <h2>Historique des parties</h2>
+    <div id="historyList"></div>
+    <button class="btn btn-ghost full-btn" onclick="showScreen('homeScreen')" type="button">Retour accueil</button>
+  </section>
+</div>
+
+<div id="countdownScreen" class="screen">
+  <div class="countdown-stage">
+    <div class="countdown-label">La manche commence</div>
+    <div id="countdownNum">3</div>
+  </div>
+</div>
+<div id="betScreen" class="screen">
+  <div class="card bet-card fade-in">
+    <div class="eyebrow">Manche speciale</div>
+    <div class="bet-title">Table des paris</div>
+    <p class="bet-subtitle">Misez une partie de vos points avant la question. Le bon buzz peut doubler la pression.</p>
+    <div class="bet-timer-wrap"><div class="bet-timer-text" id="betTimer">15</div></div>
+    <div class="bet-players" id="betPlayers"></div>
+    <button class="btn btn-gold" onclick="confirmBets()" type="button">Valider les paris</button>
+    <p class="bet-info">Les paris non remplis restent a zero.</p>
+  </div>
+</div>
+<div id="speedScreen" class="screen">
+  <div class="speed-header">
+    <div class="eyebrow">Reflexes</div>
+    <h2>Manche rapidite</h2>
+  </div>
+  <div class="card speed-card fade-in">
+    <div class="speed-question" id="speedQuestion">Question</div>
+    <div class="speed-buzzers" id="speedBuzzers"></div>
+    <div class="speed-hint" id="speedHint">Appuie sur S / K / D / L pour buzzer.</div>
+    <div class="answers-grid" id="speedAnswerGrid"></div>
+    <div class="speed-answer-reveal" id="speedAnswerReveal"></div>
+  </div>
+</div>
+<div class="round-indicator" id="roundIndicator"></div>
+<button class="btn btn-danger" id="stopBtn" onclick="stopGame()" type="button">Arreter</button>
+
+</main>
+<script defer src="assets/js/router.js"></script>
+<script defer src="assets/js/app.js"></script>
+</body>
+</html>
