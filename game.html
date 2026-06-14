@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partie - Quiz Arena</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="page-game">
+<div id="particles" aria-hidden="true"></div>
+<div id="topbar" aria-label="Actions rapides">
+  <button class="topbar-btn" onclick="showHistory()" type="button"><span>Historique</span></button>
+  <button class="topbar-btn" id="themeToggle" onclick="toggleTheme()" type="button"><span>Mode</span></button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="bonusPopup" aria-hidden="true"></div>
+<div id="quizmaster-wrap" aria-live="polite">
+  <div class="qm-bubble" id="qmBubble">Pret a jouer ?</div>
+  <img class="qm-character" id="qmChar" src="assets/img/quizmaster.png" alt="Quizmaster" aria-hidden="true">
+</div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+<div id="gameScreen" class="screen active">
+  <div class="content game-stage">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="timer-wrap card soft-card">
+      <div class="timer-meta">
+        <div class="diff-meter" id="diffMeter"><span>Difficulte</span><div class="diff-dot" id="dd1"></div><div class="diff-dot" id="dd2"></div><div class="diff-dot" id="dd3"></div></div>
+        <div class="q-counter" id="qCounter">Q 1 / 10</div>
+      </div>
+      <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+      <div class="timer-text" id="timerText">30s</div>
+    </div>
+    <section class="question-box">
+      <div id="diffBadge" class="diff-badge diff-easy">DEBUTANT</div>
+      <div class="question-text" id="questionText">Configure une partie depuis l'accueil pour entrer dans l'arene.</div>
+    </section>
+    <div class="buzzer-area">
+      <button class="buzzer" id="buzzerBtn" onclick="buzzClick()" type="button">BUZZ</button>
+      <div class="buzzer-hint" id="buzzerHint">Touches S / K / D / L</div>
+    </div>
+    <div class="joker-bar" id="jokerBar" style="display:none;">
+      <button class="joker-btn joker-50" id="j50" onclick="useJoker(50)" type="button"><span>Eliminer 1</span><span class="joker-coins">50</span></button>
+      <button class="joker-btn joker-70" id="j70" onclick="useJoker(70)" type="button"><span>Eliminer 2</span><span class="joker-coins">70</span></button>
+      <button class="joker-btn joker-100" id="j100" onclick="useJoker(100)" type="button"><span>Reveler</span><span class="joker-coins">100</span></button>
+    </div>
+    <div class="answers-grid" id="answersGrid"></div>
+  </div>
+</div>
+
+<div id="countdownScreen" class="screen">
+  <div class="countdown-stage">
+    <div class="countdown-label">La manche commence</div>
+    <div id="countdownNum">3</div>
+  </div>
+</div>
+<div id="betScreen" class="screen">
+  <div class="card bet-card fade-in">
+    <div class="eyebrow">Manche speciale</div>
+    <div class="bet-title">Table des paris</div>
+    <p class="bet-subtitle">Misez une partie de vos points avant la question. Le bon buzz peut doubler la pression.</p>
+    <div class="bet-timer-wrap"><div class="bet-timer-text" id="betTimer">15</div></div>
+    <div class="bet-players" id="betPlayers"></div>
+    <button class="btn btn-gold" onclick="confirmBets()" type="button">Valider les paris</button>
+    <p class="bet-info">Les paris non remplis restent a zero.</p>
+  </div>
+</div>
+<div id="speedScreen" class="screen">
+  <div class="speed-header">
+    <div class="eyebrow">Reflexes</div>
+    <h2>Manche rapidite</h2>
+  </div>
+  <div class="card speed-card fade-in">
+    <div class="speed-question" id="speedQuestion">Question</div>
+    <div class="speed-buzzers" id="speedBuzzers"></div>
+    <div class="speed-hint" id="speedHint">Appuie sur S / K / D / L pour buzzer.</div>
+    <div class="answers-grid" id="speedAnswerGrid"></div>
+    <div class="speed-answer-reveal" id="speedAnswerReveal"></div>
+  </div>
+</div>
+<div class="round-indicator" id="roundIndicator"></div>
+<button class="btn btn-danger" id="stopBtn" onclick="stopGame()" type="button">Arreter</button>
+
+</main>
+<script defer src="assets/js/router.js"></script>
+<script defer src="assets/js/app.js"></script>
+</body>
+</html>
