@@ -1,17 +1,19 @@
 /* ============================================================
-   TEXT-TO-SPEECH
+   TEXT-TO-SPEECH  (queue-based — no more glitch/skip)
    ============================================================ */
 const TTS = {
   voice: null,
   ready: false,
   allVoices: [],
+  _queue: [],
+  _busy: false,
+
   init() {
     const load = () => {
       const voices = speechSynthesis.getVoices();
       this.allVoices = voices;
       this.ready = true;
       this._populateSelector(voices);
-      // Auto-select: prefer male French
       const maleKw = ['thomas','nicolas','male','homme','pierre','paul','jean'];
       const frVoices = voices.filter(v => v.lang.startsWith('fr'));
       const picked =
@@ -26,11 +28,11 @@ const TTS = {
     if (speechSynthesis.getVoices().length > 0) load();
     speechSynthesis.onvoiceschanged = load;
   },
+
   _populateSelector(voices) {
     const sel = document.getElementById('voiceSelect');
     if (!sel) return;
     sel.innerHTML = '';
-    // Group: French first, then others
     const fr = voices.filter(v => v.lang.startsWith('fr'));
     const other = voices.filter(v => !v.lang.startsWith('fr'));
     if (fr.length) {
@@ -59,18 +61,43 @@ const TTS = {
       this.voice = this.allVoices.find(v => v.name === sel.value) || null;
     };
   },
-  speak(text, rate=0.95, pitch=0.78) {
+
+  /* speak() clears any pending speech and starts this one fresh */
+  speak(text, rate=0.95, pitch=0.78, onFinish=null) {
     if (!this.ready || !text) return;
+    this._queue = [];
+    this._busy = false;
+    this._onFinish = onFinish;
     speechSynthesis.cancel();
+    this._queue.push({text, rate, pitch});
+    setTimeout(() => this._playNext(), 80);
+  },
+
+  _playNext() {
+    if (this._queue.length === 0) {
+      this._busy = false;
+      if (this._onFinish) { const cb = this._onFinish; this._onFinish = null; cb(); }
+      return;
+    }
+    if (speechSynthesis.speaking) return;
+    this._busy = true;
+    const {text, rate, pitch} = this._queue.shift();
     const utter = new SpeechSynthesisUtterance(text);
     utter.voice  = this.voice;
     utter.lang   = this.voice ? this.voice.lang : 'fr-FR';
     utter.rate   = rate;
     utter.pitch  = pitch;
     utter.volume = 1;
+    utter.onend  = () => { this._busy = false; this._playNext(); };
+    utter.onerror = () => { this._busy = false; this._playNext(); };
     speechSynthesis.speak(utter);
   },
-  stop() { speechSynthesis.cancel(); }
+
+  stop() {
+    this._queue = [];
+    this._busy  = false;
+    speechSynthesis.cancel();
+  }
 };
 TTS.init();
 
@@ -131,9 +158,17 @@ const QM = {
 
     else this._setFace('neutral');
 
-    if (speak) TTS.speak(msg.replace(/[🎤📢❓OK Non Rapide 🎯Buzz 💔😬🎉Serie Temps ⏰😤]/g,''), 1.05, 1.1);
+    if (speak) {
+      // Strip all emoji unicode ranges, then collapse extra spaces
+      const clean = msg
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        .replace(/[\u2600-\u27BF]/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      TTS.speak(clean, 1.05, 1.1);
+    }
   },
-  readQuestion(q) {
+  readQuestion(q, onDone) {
     const txt = `Question : ${q}`;
     if (!this.bubble) return;
     this.bubble.textContent = `Question : ${q}`;
@@ -142,7 +177,7 @@ const QM = {
     void this.bubble.offsetWidth;
     this.bubble.style.animation = 'qmBubblePop 0.35s cubic-bezier(0.34,1.56,0.64,1)';
     this._setFace('neutral');
-    TTS.speak(txt, 0.92, 0.78);
+    TTS.speak(txt, 0.92, 0.78, onDone || null);
   }
 };
 
@@ -799,15 +834,19 @@ function loadQuestion() {
   updateDiffUI();
   updateJokerButtons();
 
-  // QM reads the question, unless somebody buzzes during the short visual settle.
+  // QM reads the question first; timer starts only after speech ends
+  maxTime = getAdaptiveTime();
   questionReadTimeout = setTimeout(() => {
     questionReadTimeout = null;
-    if (activePlayer === null && currentScreen === 'gameScreen') QM.readQuestion(q.q);
-  }, 400);
-
-  // Start adaptive timer
-  maxTime = getAdaptiveTime();
-  startTimer();
+    if (activePlayer === null && currentScreen === 'gameScreen') {
+      QM.readQuestion(q.q, () => {
+        // Start timer only after TTS finishes reading the question
+        if (activePlayer === null && currentScreen === 'gameScreen') startTimer();
+      });
+    } else {
+      startTimer();
+    }
+  }, 900);
 }
 
 function startTimer() {
@@ -847,7 +886,7 @@ function timerTimeout() {
   document.querySelectorAll('.ans-btn').forEach(b => {
     if (b.dataset.val === gameQuestions[qIndex].correct) b.classList.add('correct');
   });
-  setTimeout(() => { qIndex++; loadQuestion(); }, 1500);
+  setTimeout(() => { qIndex++; loadQuestion(); }, 2500);
 }
 
 /* Buzzer via keyboard */
@@ -981,9 +1020,12 @@ function confirmBets() {
 
   updateDiffUI();
   updateJokerButtons();
-  setTimeout(() => QM.readQuestion(q.q), 400);
   maxTime = getAdaptiveTime();
-  startTimer();
+  setTimeout(() => {
+    QM.readQuestion(q.q, () => {
+      if (activePlayer === null) startTimer();
+    });
+  }, 900);
 }
 
 function buildScoreboardWithBets() {
@@ -1111,7 +1153,7 @@ function speedAnswer(btn) {
     buildScoreboard();
     qIndex++;
     loadQuestion();
-  }, 2000);
+  }, 2500);
 }
 
 /* ============================================================
@@ -1203,7 +1245,7 @@ function answerClick(btn) {
     document.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('correct','wrong','eliminated'));
     qIndex++;
     loadQuestion();
-  }, 1600);
+  }, 2500);
 }
 
 function stopGame() {
