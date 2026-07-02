@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Quiz Arena — Questions Pour Un Champion</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+/* ===== LANDING PAGE ===== */
+body { margin:0; overflow-x:hidden; }
+
+.landing-wrap {
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 20px;
+  position:relative;
+  z-index:1;
+}
+
+/* Hero top */
+.landing-hero {
+  text-align:center;
+  margin-bottom:32px;
+}
+
+.landing-qm {
+  width:min(180px, 40vw);
+  height:auto;
+  filter:drop-shadow(0 8px 32px rgba(64,224,208,0.45));
+  animation:qmFloat 3s ease-in-out infinite;
+  margin-bottom:8px;
+}
+
+@keyframes qmFloat {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-12px);}
+}
+
+.landing-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 14px;
+  border-radius:999px;
+  background:rgba(64,224,208,0.12);
+  border:1px solid rgba(64,224,208,0.3);
+  color:var(--accent);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+.landing-badge-dot {
+  width:6px; height:6px;
+  border-radius:50%;
+  background:var(--accent);
+  animation:blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+.landing-title {
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  font-size:clamp(52px,14vw,110px);
+  font-weight:900;
+  line-height:0.88;
+  letter-spacing:-0.02em;
+  margin:0 0 12px;
+  background:linear-gradient(135deg,#fff 30%,var(--accent));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.landing-sub {
+  font-size:clamp(14px,3.5vw,18px);
+  color:var(--text-dim);
+  max-width:480px;
+  margin:0 auto 28px;
+  line-height:1.6;
+}
+
+/* Buzzer déco */
+.landing-buzz-deco {
+  width:min(280px,60vw);
+  aspect-ratio:1;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(64,224,208,0.15),transparent 70%),
+             conic-gradient(from 0deg,rgba(64,224,208,0.1),rgba(255,77,141,0.2),rgba(64,224,208,0.1));
+  border:1px solid rgba(255,255,255,0.1);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 32px;
+  position:relative;
+  animation:slowSpin 20s linear infinite;
+}
+
+.landing-buzz-core {
+  width:100px; height:100px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 25%,#ff9cae,#ff3156 48%,#7a0e24);
+  box-shadow:0 0 55px rgba(255,84,112,0.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  font-weight:900;
+  font-size:14px;
+  letter-spacing:0.1em;
+  color:#fff;
+  animation:buzzPulse 2.4s infinite;
+  position:relative;
+  z-index:2;
+}
+
+/* Compte card */
+.landing-card {
+  width:min(420px,100%);
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:16px;
+  backdrop-filter:blur(18px);
+  padding:28px 24px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.4);
+}
+
+.landing-card-title {
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  font-size:22px;
+  font-weight:900;
+  margin:0 0 6px;
+  text-align:center;
+}
+
+.landing-card-sub {
+  font-size:13px;
+  color:var(--text-dim);
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.landing-input-group {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.landing-inp {
+  width:100%;
+  padding:14px 16px;
+  border-radius:10px;
+  border:1px solid var(--card-border);
+  background:rgba(0,0,0,0.2);
+  color:var(--text);
+  font-size:16px;
+  font-weight:700;
+  outline:none;
+  box-sizing:border-box;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+
+.landing-inp:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(64,224,208,0.12);
+}
+
+.landing-inp::placeholder { color:var(--muted); }
+
+.landing-btn-primary {
+  width:100%;
+  padding:15px;
+  border:0;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));
+  color:#071016;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+  transition:transform 0.2s, box-shadow 0.2s;
+  margin-bottom:10px;
+}
+
+.landing-btn-primary:hover {
+  transform:translateY(-2px);
+  box-shadow:0 16px 38px rgba(64,224,208,0.3);
+}
+
+.landing-btn-ghost {
+  width:100%;
+  padding:13px;
+  border:1px solid var(--card-border);
+  border-radius:10px;
+  background:transparent;
+  color:var(--text-dim);
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  transition:border-color 0.2s, color 0.2s;
+}
+
+.landing-btn-ghost:hover {
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+.landing-divider {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:14px 0;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.landing-divider::before,
+.landing-divider::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--card-border);
+}
+
+/* Profil connecté (si déjà un compte) */
+.landing-profile {
+  display:none;
+  flex-direction:column;
+  gap:12px;
+}
+
+.profile-header {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px;
+  border-radius:10px;
+  background:rgba(64,224,208,0.08);
+  border:1px solid rgba(64,224,208,0.2);
+}
+
+.profile-avatar {
+  width:46px; height:46px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
+  color:#fff;
+  flex-shrink:0;
+}
+
+.profile-name {
+  font-weight:900;
+  font-size:17px;
+}
+
+.profile-stats {
+  display:flex;
+  gap:16px;
+  font-size:12px;
+  color:var(--text-dim);
+  margin-top:2px;
+}
+
+.profile-stat-val {
+  color:var(--gold);
+  font-weight:900;
+}
+
+.profile-actions {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Nav minimale */
+.landing-nav {
+  position:fixed;
+  top:16px;
+  right:16px;
+  display:flex;
+  gap:8px;
+  z-index:30;
+}
+
+.landing-nav-btn {
+  padding:9px 14px;
+  border-radius:8px;
+  border:1px solid var(--card-border);
+  background:rgba(9,11,16,0.6);
+  backdrop-filter:blur(14px);
+  color:var(--text-dim);
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:border-color 0.2s, color 0.2s;
+}
+
+.landing-nav-btn:hover {
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+/* Tabs */
+.landing-tabs {
+  display:flex;
+  gap:4px;
+  margin-bottom:20px;
+  background:rgba(0,0,0,0.2);
+  padding:4px;
+  border-radius:10px;
+}
+
+.landing-tab {
+  flex:1;
+  padding:10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text-dim);
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  transition:background 0.2s, color 0.2s;
+}
+
+.landing-tab.active {
+  background:var(--surface-strong);
+  color:var(--text);
+}
+
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* Error msg */
+.landing-error {
+  color:var(--danger);
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  min-height:18px;
+  margin-bottom:8px;
+}
+</style>
+</head>
+<body>
+<div id="particles" aria-hidden="true"></div>
+
+<!-- Nav top droite -->
+<nav class="landing-nav">
+  <a class="landing-nav-btn" href="rules.html">📋 Règles</a>
+  <a class="landing-nav-btn" href="history.html">📊 Historique</a>
+  <button class="landing-nav-btn" onclick="toggleThemeLanding()">🌙 Mode</button>
+</nav>
+
+<div class="landing-wrap">
+
+  <!-- Hero + QM -->
+  <div class="landing-hero">
+    <img class="landing-qm" src="assets/img/quizmaster.png" alt="Quizmaster">
+    <div class="landing-badge">
+      <span class="landing-badge-dot"></span>
+      S2 Edition · Quiz Multijoueur
+    </div>
+    <h1 class="landing-title">Quiz Arena</h1>
+    <p class="landing-sub">Un plateau digital nerveux pour quatre joueurs — buzzers, paris, jokers et Quizmaster en direct.</p>
+  </div>
+
+  <!-- Carte compte / profil -->
+  <div class="landing-card">
+
+    <!-- Vue: pas connecté -->
+    <div id="authView">
+      <div class="landing-tabs">
+        <button class="landing-tab active" onclick="switchTab('login')">Connexion</button>
+        <button class="landing-tab" onclick="switchTab('register')">Créer compte</button>
+      </div>
+
+      <!-- Login -->
+      <div class="tab-pane active" id="loginPane">
+        <div class="landing-input-group">
+          <input class="landing-inp" id="loginName" placeholder="Nom d'utilisateur" autocomplete="username">
+          <input class="landing-inp" id="loginPass" type="password" placeholder="Mot de passe" autocomplete="current-password">
+        </div>
+        <div class="landing-error" id="loginError"></div>
+        <button class="landing-btn-primary" onclick="doLogin()">Se connecter</button>
+        <div class="landing-divider">ou</div>
+        <button class="landing-btn-ghost" onclick="doGuest()">Continuer sans compte</button>
+      </div>
+
+      <!-- Register -->
+      <div class="tab-pane" id="registerPane">
+        <div class="landing-input-group">
+          <input class="landing-inp" id="regName" placeholder="Nom d'utilisateur" autocomplete="username">
+          <input class="landing-inp" id="regPass" type="password" placeholder="Mot de passe" autocomplete="new-password">
+          <input class="landing-inp" id="regPass2" type="password" placeholder="Confirmer le mot de passe" autocomplete="new-password">
+        </div>
+        <div class="landing-error" id="regError"></div>
+        <button class="landing-btn-primary" onclick="doRegister()">Créer le compte</button>
+        <div class="landing-divider">ou</div>
+        <button class="landing-btn-ghost" onclick="doGuest()">Continuer sans compte</button>
+      </div>
+    </div>
+
+    <!-- Vue: connecté -->
+    <div id="profileView" class="landing-profile">
+      <p style="text-align:center;color:var(--text-dim);font-size:13px;margin:0 0 12px;">Bon retour 👋</p>
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div>
+          <div class="profile-name" id="profileName">—</div>
+          <div class="profile-stats">
+            <span>Coins: <span class="profile-stat-val" id="profileCoins">0</span></span>
+            <span>Parties: <span class="profile-stat-val" id="profileGames">0</span></span>
+            <span>Meilleur: <span class="profile-stat-val" id="profileBest">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="landing-btn-primary" onclick="goPlay()">🎮 Jouer</button>
+        <button class="landing-btn-ghost" onclick="goTournament()">🏆 Tournoi</button>
+        <button class="landing-btn-ghost" onclick="goMission()">⚡ Mission rapide</button>
+        <button class="landing-btn-ghost" style="color:var(--danger);border-color:rgba(255,84,112,0.3);" onclick="doLogout()">Se déconnecter</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== PARTICLES =====
+(function(){
+  const p=document.getElementById('particles');
+  if(!p)return;
+  const colors=['rgba(64,224,208,.55)','rgba(255,77,141,.45)','rgba(255,209,102,.4)','rgba(124,92,255,.45)'];
+  for(let i=0;i<28;i++){
+    const s=document.createElement('span');
+    const sz=Math.random()*5+3;
+    s.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${colors[i%colors.length]};animation-duration:${Math.random()*12+7}s;animation-delay:-${Math.random()*12}s;`;
+    p.appendChild(s);
+  }
+})();
+
+// ===== THEME =====
+function toggleThemeLanding(){
+  document.body.classList.toggle('light');
+  localStorage.setItem('qa_theme', document.body.classList.contains('light')?'light':'dark');
+}
+if(localStorage.getItem('qa_theme')==='light') document.body.classList.add('light');
+
+// ===== ACCOUNTS SYSTEM =====
+function getAccounts(){
+  try{ return JSON.parse(localStorage.getItem('qa_accounts')||'{}'); }
+  catch(e){ return {}; }
+}
+function saveAccounts(a){ localStorage.setItem('qa_accounts',JSON.stringify(a)); }
+function getCurrentUser(){
+  try{ return JSON.parse(localStorage.getItem('qa_current_user')||'null'); }
+  catch(e){ return null; }
+}
+function setCurrentUser(u){ localStorage.setItem('qa_current_user', u ? JSON.stringify(u) : 'null'); }
+
+function switchTab(tab){
+  document.querySelectorAll('.landing-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register'));
+  });
+  document.getElementById('loginPane').classList.toggle('active', tab==='login');
+  document.getElementById('registerPane').classList.toggle('active', tab==='register');
+  document.getElementById('loginError').textContent='';
+  document.getElementById('regError').textContent='';
+}
+
+function doRegister(){
+  const name = document.getElementById('regName').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  const err = document.getElementById('regError');
+
+  if(name.length < 2){ err.textContent='Nom trop court (min 2 caractères)'; return; }
+  if(!/[a-zA-ZÀ-ÿ]/.test(name)){ err.textContent='Le nom doit contenir au moins une lettre'; return; }
+  if(pass.length < 4){ err.textContent='Mot de passe trop court (min 4 caractères)'; return; }
+  if(pass !== pass2){ err.textContent='Les mots de passe ne correspondent pas'; return; }
+
+  const accounts = getAccounts();
+  if(accounts[name.toLowerCase()]){ err.textContent='Ce nom est déjà pris'; return; }
+
+  accounts[name.toLowerCase()] = {
+    name: name,
+    pass: pass,
+    coins: 150,
+    games: 0,
+    bestScore: 0,
+    history: [],
+    createdAt: Date.now()
+  };
+  saveAccounts(accounts);
+
+  const user = accounts[name.toLowerCase()];
+  setCurrentUser(user);
+  showProfile(user);
+}
+
+function doLogin(){
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+
+  if(!name || !pass){ err.textContent='Remplis tous les champs'; return; }
+
+  const accounts = getAccounts();
+  const user = accounts[name.toLowerCase()];
+  if(!user || user.pass !== pass){ err.textContent='Nom ou mot de passe incorrect'; return; }
+
+  setCurrentUser(user);
+  showProfile(user);
+}
+
+function doGuest(){
+  setCurrentUser(null);
+  window.location.href = 'index.html';
+}
+
+function doLogout(){
+  setCurrentUser(null);
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('authView').style.display = 'block';
+}
+
+function showProfile(user){
+  document.getElementById('authView').style.display = 'none';
+  const pv = document.getElementById('profileView');
+  pv.style.display = 'flex';
+  document.getElementById('profileAvatar').textContent = user.name.charAt(0).toUpperCase();
+  document.getElementById('profileName').textContent = user.name;
+
+  // Charger les données à jour
+  const accounts = getAccounts();
+  const fresh = accounts[user.name.toLowerCase()] || user;
+  const coinsData = JSON.parse(localStorage.getItem('qa_coins_'+user.name.toLowerCase())||'{"coins":'+fresh.coins+'}');
+
+  document.getElementById('profileCoins').textContent = coinsData.coins || fresh.coins;
+  document.getElementById('profileGames').textContent = fresh.games || 0;
+  document.getElementById('profileBest').textContent = fresh.bestScore || 0;
+}
+
+function goPlay(){ window.location.href = 'index.html'; }
+function goTournament(){ window.location.href = 'tournament.html'; }
+function goMission(){ window.location.href = 'mission.html'; }
+
+// ===== INIT =====
+const currentUser = getCurrentUser();
+if(currentUser){
+  showProfile(currentUser);
+}
+
+// Keyboard enter
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('regPass2') && document.getElementById('regPass2').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+</script>
+</body>
+</html>
