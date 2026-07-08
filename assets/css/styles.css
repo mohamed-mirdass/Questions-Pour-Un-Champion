@@ -413,8 +413,10 @@ body.light .rules-toc{
   #gameScreen { padding-top: 12px !important; }
   #toast { top: 92px !important; }
  
-  /* === QUIZMASTER: hidden on mobile (blocks content) === */
-  #quizmaster-wrap { display: none !important; }
+  /* === QUIZMASTER: compact on mobile so it stays visible without covering content === */
+  #quizmaster-wrap { width: 84px !important; max-width: 26vw !important; left: 8px !important; bottom: 6px !important; }
+  .qm-character { width: 70px !important; }
+  .qm-bubble { max-width: 130px !important; font-size: 11px !important; padding: 8px 10px !important; }
  
   /* === HOME === */
   .hero-panel { grid-template-columns: 1fr !important; gap: 12px !important; text-align: center; }
@@ -582,3 +584,9 @@ body.light .rules-toc{
   #buzzerArea .buzzer .buzzer-key{font-size:16px}
   #buzzerArea .buzzer .buzzer-name{font-size:11px}
 }
+ 
+/* Missing Quizmaster entrance/bubble animations (referenced by QM.show()/QM.say()
+   in tts.js but never defined — fix so the entrance transition actually plays). */
+@keyframes qmSlideIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes qmSlideOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(24px)}}
+@keyframes qmBubblePop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
