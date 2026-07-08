@@ -3,7 +3,7 @@
    et personnage Quizmaster (QM). Regroupe tout le feedback audio/visuel
    lié au Quizmaster, requis par le cahier des charges (feedback sonore).
    ============================================================ */
-
+ 
 /* ============================================================
    TEXT-TO-SPEECH  (queue-based — no more glitch/skip)
    ============================================================ */
@@ -13,7 +13,7 @@ const TTS = {
   allVoices: [],
   _queue: [],
   _busy: false,
-
+ 
   init() {
     const load = () => {
       const voices = speechSynthesis.getVoices();
@@ -34,7 +34,7 @@ const TTS = {
     if (speechSynthesis.getVoices().length > 0) load();
     speechSynthesis.onvoiceschanged = load;
   },
-
+ 
   _populateSelector(voices) {
     const sel = document.getElementById('voiceSelect');
     if (!sel) return;
@@ -67,7 +67,7 @@ const TTS = {
       this.voice = this.allVoices.find(v => v.name === sel.value) || null;
     };
   },
-
+ 
   /* speak() clears any pending speech and starts this one fresh */
   speak(text, rate=0.95, pitch=0.78, onFinish=null) {
     if (!this.ready || !text) return;
@@ -75,10 +75,11 @@ const TTS = {
     this._busy = false;
     this._onFinish = onFinish;
     speechSynthesis.cancel();
+    if (speechSynthesis.paused) speechSynthesis.resume(); // known Android Chrome bug: stays paused after cancel()
     this._queue.push({text, rate, pitch});
-    setTimeout(() => this._playNext(), 80);
+    setTimeout(() => this._playNext(), 150);
   },
-
+ 
   _playNext() {
     if (this._queue.length === 0) {
       this._busy = false;
@@ -98,7 +99,7 @@ const TTS = {
     utter.onerror = () => { this._busy = false; this._playNext(); };
     speechSynthesis.speak(utter);
   },
-
+ 
   stop() {
     this._queue = [];
     this._busy  = false;
@@ -106,11 +107,11 @@ const TTS = {
   }
 };
 TTS.init();
-
+ 
 function testVoice() {
   TTS.speak('Bonjour ! Je suis le Quizmaster. Bonne chance à tous !', 0.95, 0.78);
 }
-
+ 
 /* ============================================================
    SFX — game sound effects (Web Audio API synth, no mp3 files needed)
    Feedback sonore requis par le cahier des charges, en plus de la
@@ -156,7 +157,7 @@ const SFX = {
   loadPref() { try { this.muted = localStorage.getItem('qpuc_sfx_muted') === '1'; } catch (e) {} }
 };
 SFX.loadPref();
-
+ 
 /* ============================================================
    QUIZMASTER CHARACTER
    ============================================================ */
@@ -203,13 +204,13 @@ const QM = {
     this.bubble.style.animation = 'none';
     void this.bubble.offsetWidth;
     this.bubble.style.animation = 'qmBubblePop 0.35s cubic-bezier(0.34,1.56,0.64,1)';
-
+ 
     if (type === 'correct-msg') this._setFace('happy');
     else if (type === 'wrong-msg' || type === 'time-msg') this._setFace('sad');
     else if (type === 'buzz-msg') this._setFace('excited');
-
+ 
     else this._setFace('neutral');
-
+ 
     if (speak) {
       // Strip all emoji unicode ranges, then collapse extra spaces
       const clean = msg
@@ -232,7 +233,7 @@ const QM = {
     TTS.speak(txt, 0.92, 0.78, onDone || null);
   }
 };
-
+ 
 // Quizmaster messages
 const QM_BUZZ_MSGS   = name => [`${name} a buzzé en premier !`, `C'est ${name} qui répond !`, `${name} prend la parole !`];
 const QM_CORRECT     = name => [`Bravo ${name} ! C'est la bonne réponse !`, `Excellent ${name}, parfait !`, `${name} marque des points !`];
@@ -243,5 +244,3 @@ const QM_JOKER_50    = name => `${name} élimine une mauvaise réponse !`;
 const QM_JOKER_70    = name => `${name} élimine deux mauvaises réponses !`;
 const QM_JOKER_100   = name => `${name} révèle la bonne réponse !`;
 const rand = arr => arr[Math.floor(Math.random()*arr.length)];
-
-
