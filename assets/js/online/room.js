@@ -1,5 +1,5 @@
 // assets/js/online/room.js
-// Room logic: Host creates a room / Players join a room
+// منطق: إنشاء غرفة (Host) / الانضمام لغرفة (Player)
 
 import { supabase } from './supabaseClient.js';
 
@@ -95,9 +95,38 @@ export function subscribeToRoom(roomId, callbacks = {}) {
       { event: 'INSERT', schema: 'public', table: 'buzzes', filter: `room_id=eq.${roomId}` },
       (payload) => callbacks.onBuzz?.(payload)
     )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'answers', filter: `room_id=eq.${roomId}` },
+      (payload) => callbacks.onAnswer?.(payload)
+    )
     .subscribe();
 
   return channel;
+}
+
+export async function updateLiveState(roomId, state) {
+  try {
+    const { error } = await supabase
+      .from('rooms')
+      .update({ live_state: state })
+      .eq('id', roomId);
+    if (error) throw error;
+  } catch (err) {
+    console.error('[updateLiveState] failed:', err);
+  }
+}
+
+export async function submitAnswer(roomId, playerId, questionIndex, answerText) {
+  try {
+    const { error } = await supabase
+      .from('answers')
+      .insert({ room_id: roomId, player_id: playerId, question_index: questionIndex, answer_text: answerText });
+    if (error) throw error;
+  } catch (err) {
+    console.error('[submitAnswer] failed:', err);
+    throw new Error('Could not send your answer, try again.');
+  }
 }
 
 export async function startGame(roomId) {
