@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Partie en ligne</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+  .online-hero{width:min(760px,100%);text-align:center;margin:0 auto}
+  .online-choices{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  @media (max-width:640px){.online-choices{grid-template-columns:1fr}}
+  .online-choice{padding:28px 20px;text-align:center;cursor:pointer;text-decoration:none;display:block}
+  .online-choice .oc-icon{font-size:38px;margin-bottom:10px}
+  .online-choice h3{font-family:ui-sans-serif,system-ui,sans-serif;font-size:22px;margin:6px 0}
+  .online-choice p{color:var(--text-dim);font-size:14px;line-height:1.5;margin:0}
+</style>
+</head>
+<body class="page-online">
+<div id="particles" aria-hidden="true"></div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="online.html" data-nav>En ligne</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+  <div class="screen active">
+    <section class="online-hero fade-in">
+      <div class="eyebrow">S2 Edition · multijoueur en ligne</div>
+      <h1 style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:clamp(38px,7vw,64px);margin:8px 0">Partie en ligne</h1>
+      <p style="color:var(--text-dim);font-size:16px;line-height:1.6">Cree une salle et partage le QR code avec tes amis, ou rejoins une partie deja lancee avec un code.</p>
+
+      <div class="online-choices">
+        <a class="card online-choice" href="online-host.html">
+          <div class="oc-icon">🎪</div>
+          <h3>Creer une salle</h3>
+          <p>Genere un code + QR code. Tes amis scannent et rejoignent en direct.</p>
+        </a>
+        <a class="card online-choice" href="online-join.html">
+          <div class="oc-icon">🔑</div>
+          <h3>Rejoindre avec un code</h3>
+          <p>Tu as deja un code de salle ? Entre ton nom et rejoins la partie.</p>
+        </a>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
