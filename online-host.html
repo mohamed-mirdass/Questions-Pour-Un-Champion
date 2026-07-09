@@ -34,6 +34,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
     #status-msg { margin-top: 12px; opacity: 0.8; }
+    #winner-box { color: #ffd166; }
   </style>
 </head>
 <body>
@@ -53,10 +54,16 @@
 
       <button id="start-btn" disabled>Start Game</button>
     </div>
+
+    <div id="quiz-panel" style="display:none;">
+      <h2>Question <span id="q-num">1</span></h2>
+      <div id="winner-box" style="min-height: 40px; font-size: 20px; font-weight: bold; margin: 16px 0;"></div>
+      <button id="next-btn">Next Question</button>
+    </div>
   </div>
 
   <script type="module">
-    import { createRoom, subscribeToRoom, getPlayers } from './assets/js/online/room.js';
+    import { createRoom, subscribeToRoom, getPlayers, startGame, nextQuestion } from './assets/js/online/room.js';
 
     const statusMsg = document.getElementById('status-msg');
     const roomInfo = document.getElementById('room-info');
@@ -65,8 +72,18 @@
     const playersList = document.getElementById('players-list');
     const playerCount = document.getElementById('player-count');
     const startBtn = document.getElementById('start-btn');
+    const quizPanel = document.getElementById('quiz-panel');
+    const qNumEl = document.getElementById('q-num');
+    const winnerBox = document.getElementById('winner-box');
+    const nextBtn = document.getElementById('next-btn');
 
-    function renderPlayers(players) {
+    let players = [];
+    let currentRoom = null;
+    let currentQuestionIndex = 0;
+    let currentWinner = null;
+
+    function renderPlayers(list) {
+      players = list;
       playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} pts</li>`).join('');
       playerCount.textContent = players.length;
       startBtn.disabled = players.length === 0;
@@ -81,6 +98,7 @@
     (async () => {
       try {
         const { room } = await createRoom();
+        currentRoom = room;
 
         roomCodeEl.textContent = room.code;
         const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
@@ -93,14 +111,46 @@
 
         subscribeToRoom(room.id, {
           onPlayersChange: async () => renderPlayers(await getPlayers(room.id)),
+          onBuzz: (payload) => {
+            const b = payload.new;
+            if (b.question_index !== currentQuestionIndex) return;
+            if (currentWinner) return;
+            const player = players.find(p => p.id === b.player_id);
+            currentWinner = { name: player?.name || 'Unknown', id: b.player_id };
+            winnerBox.textContent = `🏆 ${currentWinner.name} buzzed first!`;
+          },
         });
       } catch (err) {
         statusMsg.textContent = '⚠️ ' + err.message;
       }
     })();
 
-    startBtn.addEventListener('click', () => {
-      alert('Start Game — coming in Day 2/3 of the plan');
+    startBtn.addEventListener('click', async () => {
+      try {
+        startBtn.disabled = true;
+        await startGame(currentRoom.id);
+        currentQuestionIndex = 0;
+        currentWinner = null;
+        qNumEl.textContent = currentQuestionIndex + 1;
+        winnerBox.textContent = 'Waiting for buzz...';
+        roomInfo.style.display = 'none';
+        quizPanel.style.display = 'block';
+      } catch (err) {
+        alert(err.message);
+        startBtn.disabled = false;
+      }
+    });
+
+    nextBtn.addEventListener('click', async () => {
+      currentQuestionIndex++;
+      currentWinner = null;
+      winnerBox.textContent = 'Waiting for buzz...';
+      qNumEl.textContent = currentQuestionIndex + 1;
+      try {
+        await nextQuestion(currentRoom.id, currentQuestionIndex);
+      } catch (err) {
+        alert(err.message);
+      }
     });
   </script>
 </body>
