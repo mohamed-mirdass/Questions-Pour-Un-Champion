@@ -1,11 +1,14 @@
 // assets/js/online/bridge.js
 // Bridge: relie une salle en ligne (Supabase) au moteur de jeu LOCAL existant
 // (game.js). Charge uniquement si l'URL contient ?room=CODE.
-// Remplit p1in..p4in avec les vrais noms, et transforme chaque buzz distant
-// en appel direct a la fonction globale buzz(pIdx) deja utilisee par le
-// clavier S/D/K/L en local.
+// - Remplit p1in..p4in avec les vrais noms
+// - Transmet chaque buzz distant vers la fonction globale buzz(pIdx)
+// - Diffuse l'etat live du jeu (question, choix, timer, scores) vers Supabase
+// - Recoit les reponses envoyees depuis les telephones et les transforme
+//   en clic reel sur le bon bouton de reponse (answerClick)
 
 import { supabase } from './supabaseClient.js';
+import { updateLiveState, submitAnswer } from './room.js';
 
 const params = new URLSearchParams(location.search);
 const roomCode = params.get('room');
@@ -35,7 +38,6 @@ async function initOnlineBridge(code) {
 
     if (playersErr) throw playersErr;
 
-    // Remplit automatiquement les 4 champs de noms (Robot si vide)
     const ids = ['p1in', 'p2in', 'p3in', 'p4in'];
     ids.forEach((id, i) => {
       const el = document.getElementById(id);
@@ -43,32 +45,109 @@ async function initOnlineBridge(code) {
       el.value = players[i] ? players[i].name : `Robot ${i + 1}`;
     });
 
-    // Ecoute les buzz distants et les transforme en buzz() local
-    supabase
-      .channel(`bridge-${room.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'buzzes', filter: `room_id=eq.${room.id}` },
-        (payload) => {
-          const b = payload.new;
-          const idx = players.findIndex((p) => p.id === b.player_id);
-          if (idx === -1) return;
-
-          // Ne transmet le buzz que si la partie locale est active et en attente
-          if (
-            typeof gameActive !== 'undefined' && gameActive &&
-            typeof currentScreen !== 'undefined' && currentScreen === 'gameScreen' &&
-            typeof activePlayer !== 'undefined' && activePlayer === null &&
-            typeof buzz === 'function'
-          ) {
-            buzz(idx);
-          }
-        }
-      )
-      .subscribe();
+    subscribeBridge(room, players);
+    startBroadcastLoop(room);
 
     console.log('[bridge] Online room connected:', room.code, 'players:', players.map(p => p.name));
   } catch (err) {
     console.error('[bridge] init failed:', err);
   }
+}
+
+function subscribeBridge(room, players) {
+  supabase
+    .channel(`bridge-${room.id}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'buzzes', filter: `room_id=eq.${room.id}` },
+      (payload) => {
+        const b = payload.new;
+        const idx = players.findIndex((p) => p.id === b.player_id);
+        if (idx === -1) return;
+
+        if (
+          typeof gameActive !== 'undefined' && gameActive &&
+          typeof currentScreen !== 'undefined' && currentScreen === 'gameScreen' &&
+          typeof activePlayer !== 'undefined' && activePlayer === null &&
+          typeof buzz === 'function'
+        ) {
+          buzz(idx);
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'answers', filter: `room_id=eq.${room.id}` },
+      (payload) => {
+        const a = payload.new;
+        const idx = players.findIndex((p) => p.id === a.player_id);
+        if (idx === -1) return;
+
+        if (
+          typeof activePlayer !== 'undefined' && activePlayer === idx &&
+          typeof currentScreen !== 'undefined' && currentScreen === 'gameScreen'
+        ) {
+          const btn = Array.from(document.querySelectorAll('#answersGrid .ans-btn'))
+            .find((b) => b.dataset.val === a.answer_text);
+          if (btn && typeof answerClick === 'function') {
+            answerClick(btn);
+          }
+        }
+      }
+    )
+    .subscribe();
+}
+
+function startBroadcastLoop(room) {
+  let lastSnapshot = '';
+
+  setInterval(() => {
+    try {
+      const state = buildLiveState();
+      const snapshot = JSON.stringify(state);
+      if (snapshot === lastSnapshot) return;
+      lastSnapshot = snapshot;
+      updateLiveState(room.id, state);
+    } catch (err) {
+      // silencieux
+    }
+  }, 800);
+}
+
+function buildLiveState() {
+  const screen = typeof currentScreen !== 'undefined' ? currentScreen : null;
+
+  const state = {
+    screen,
+    qIndex: typeof qIndex !== 'undefined' ? qIndex : null,
+    qCounter: document.getElementById('qCounter')?.textContent || '',
+    questionText: document.getElementById('questionText')?.textContent || '',
+    diffLabel: document.getElementById('diffBadge')?.textContent || '',
+    timeLeft: typeof timeLeft !== 'undefined' ? timeLeft : null,
+    maxTime: typeof maxTime !== 'undefined' ? maxTime : null,
+    activePlayerIdx: typeof activePlayer !== 'undefined' ? activePlayer : null,
+    choices: [],
+    revealed: false,
+    correctText: null,
+    scores: [],
+  };
+
+  const buttons = document.querySelectorAll('#answersGrid .ans-btn');
+  buttons.forEach((btn) => {
+    const letterEl = btn.querySelector('.ans-letter');
+    state.choices.push({
+      letter: letterEl ? letterEl.textContent : '',
+      text: btn.dataset.val || '',
+    });
+    if (btn.classList.contains('correct')) {
+      state.revealed = true;
+      state.correctText = btn.dataset.val;
+    }
+  });
+
+  if (typeof players !== 'undefined' && Array.isArray(players)) {
+    state.scores = players.map((p) => ({ name: p.name, score: p.score }));
+  }
+
+  return state;
 }
