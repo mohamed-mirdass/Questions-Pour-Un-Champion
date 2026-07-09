@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partie en ligne — Host</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .online-host-wrap {
+      max-width: 480px;
+      margin: 40px auto;
+      text-align: center;
+      padding: 24px;
+    }
+    .room-code {
+      font-size: 48px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      margin: 16px 0;
+    }
+    .qr-box img {
+      width: 220px;
+      height: 220px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 12px;
+    }
+    .players-list {
+      margin-top: 24px;
+      text-align: left;
+    }
+    .players-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    #status-msg { margin-top: 12px; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <div class="online-host-wrap">
+    <h1>🎮 Partie en ligne</h1>
+    <p id="status-msg">جارٍ إنشاء الغرفة...</p>
+
+    <div id="room-info" style="display:none;">
+      <div class="room-code" id="room-code">----</div>
+      <div class="qr-box">
+        <img id="qr-img" alt="QR code للانضمام" />
+      </div>
+      <p>سكانيو الـ QR ولا دخلو الكود فـ <code>online-join.html</code></p>
+
+      <h3>اللاعبين (<span id="player-count">0</span>)</h3>
+      <ul class="players-list" id="players-list"></ul>
+
+      <button id="start-btn" disabled>بدا اللعبة</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createRoom, subscribeToRoom, getPlayers } from './assets/js/online/room.js';
+
+    const statusMsg = document.getElementById('status-msg');
+    const roomInfo = document.getElementById('room-info');
+    const roomCodeEl = document.getElementById('room-code');
+    const qrImg = document.getElementById('qr-img');
+    const playersList = document.getElementById('players-list');
+    const playerCount = document.getElementById('player-count');
+    const startBtn = document.getElementById('start-btn');
+
+    function renderPlayers(players) {
+      playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} نقطة</li>`).join('');
+      playerCount.textContent = players.length;
+      startBtn.disabled = players.length === 0;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    (async () => {
+      try {
+        const { room } = await createRoom();
+
+        roomCodeEl.textContent = room.code;
+        const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
+
+        statusMsg.style.display = 'none';
+        roomInfo.style.display = 'block';
+
+        renderPlayers(await getPlayers(room.id));
+
+        subscribeToRoom(room.id, {
+          onPlayersChange: async () => renderPlayers(await getPlayers(room.id)),
+        });
+      } catch (err) {
+        statusMsg.textContent = '⚠️ ' + err.message;
+      }
+    })();
+
+    startBtn.addEventListener('click', () => {
+      alert('بدا اللعبة — غادي يتزاد فاليوم 2/3 ديال البلان');
+    });
+  </script>
+</body>
+</html>
