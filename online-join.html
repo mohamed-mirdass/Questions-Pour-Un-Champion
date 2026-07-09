@@ -11,19 +11,31 @@
   .join-wrap .inp{margin:8px 0;text-align:center}
   #join-code{text-transform:uppercase;letter-spacing:4px}
   #join-error{color:var(--danger);margin-top:10px;min-height:20px;font-weight:800;font-size:13px}
+
   #waiting-msg{display:none;margin-top:20px;color:var(--text-dim)}
-  #buzz-screen{display:none;text-align:center;margin-top:10px}
+
+  #play-screen{display:none;text-align:center}
+  #q-context{color:var(--text-dim);font-size:12px;font-weight:800;margin-bottom:6px}
+  #q-text{font-size:18px;font-weight:800;margin:10px 0 16px;line-height:1.4}
+  #turn-msg{font-size:15px;font-weight:800;min-height:22px;margin-bottom:10px}
+
   #buzz-btn{
-    width:200px;height:200px;border-radius:50%;border:0;color:#fff;
+    width:180px;height:180px;border-radius:50%;border:0;color:#fff;
     background:radial-gradient(circle at 35% 25%,#ff9cae,#ff3156 48%,#7a0e24);
     box-shadow:0 0 0 10px rgba(255,84,112,.08),0 24px 58px rgba(255,84,112,.36);
-    font-family:ui-sans-serif,system-ui,sans-serif;font-weight:900;font-size:26px;
-    letter-spacing:.08em;cursor:pointer;animation:buzzPulse 2.4s infinite;
+    font-family:ui-sans-serif,system-ui,sans-serif;font-weight:900;font-size:24px;
+    letter-spacing:.08em;cursor:pointer;animation:buzzPulse 2.4s infinite;margin:10px auto;
   }
   #buzz-btn:disabled{animation:none;background:var(--surface);box-shadow:none;color:var(--muted);cursor:not-allowed}
   @keyframes buzzPulse{50%{transform:translateY(-7px)}}
-  #buzz-status{margin-top:16px;font-size:16px;font-weight:800;min-height:24px}
-  #q-label{margin-bottom:14px;color:var(--text-dim);font-weight:800}
+
+  .choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .choice-btn{padding:16px 10px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--card-border);color:var(--text);font-weight:800;font-size:14px;cursor:pointer}
+  .choice-btn:disabled{opacity:.5;cursor:not-allowed}
+  .choice-btn.correct{background:rgba(46,213,115,.18);border-color:#2ed573}
+  .choice-btn.wrong{background:rgba(255,71,87,.18);border-color:#ff4757}
+
+  #buzz-status{margin-top:14px;font-size:14px;font-weight:800;min-height:20px}
 </style>
 </head>
 <body class="page-online">
@@ -51,9 +63,12 @@
       <p id="join-error"></p>
       <p id="waiting-msg">✅ Tu es dans la salle ! En attente du lancement par l'hote...</p>
 
-      <div id="buzz-screen">
-        <p id="q-label">Appuie des que tu connais la reponse !</p>
+      <div id="play-screen">
+        <div id="q-context"></div>
+        <div id="q-text"></div>
+        <div id="turn-msg"></div>
         <button id="buzz-btn">BUZZ</button>
+        <div class="choices-grid" id="choices-grid" style="display:none;"></div>
         <p id="buzz-status"></p>
       </div>
     </div>
@@ -61,20 +76,27 @@
 </main>
 
 <script type="module">
-  import { joinRoom, subscribeToRoom, buzz } from './assets/js/online/room.js';
+  import { joinRoom, subscribeToRoom, getPlayers, buzz, submitAnswer } from './assets/js/online/room.js';
 
   const form = document.getElementById('join-form');
   const codeInput = document.getElementById('join-code');
   const nameInput = document.getElementById('join-name');
   const errorEl = document.getElementById('join-error');
   const waitingMsg = document.getElementById('waiting-msg');
-  const buzzScreen = document.getElementById('buzz-screen');
+  const playScreen = document.getElementById('play-screen');
+  const qContext = document.getElementById('q-context');
+  const qText = document.getElementById('q-text');
+  const turnMsg = document.getElementById('turn-msg');
   const buzzBtn = document.getElementById('buzz-btn');
+  const choicesGrid = document.getElementById('choices-grid');
   const buzzStatus = document.getElementById('buzz-status');
 
   let currentRoom = null;
   let currentPlayer = null;
+  let myIndex = -1;
   let hasStarted = false;
+  let lastQIndex = null;
+  let hasAnsweredThisQuestion = false;
 
   const params = new URLSearchParams(location.search);
   if (params.get('code')) codeInput.value = params.get('code');
@@ -90,11 +112,15 @@
       currentRoom = room;
       currentPlayer = player;
 
+      const allPlayers = await getPlayers(room.id);
+      myIndex = allPlayers.findIndex((p) => p.id === player.id);
+
       form.style.display = 'none';
 
       if (room.status === 'playing') {
         hasStarted = true;
-        showBuzzScreen();
+        showPlayScreen();
+        render(room.live_state || {});
       } else {
         waitingMsg.style.display = 'block';
       }
@@ -105,7 +131,10 @@
           if (updated.status === 'playing' && !hasStarted) {
             hasStarted = true;
             waitingMsg.style.display = 'none';
-            showBuzzScreen();
+            showPlayScreen();
+          }
+          if (hasStarted) {
+            render(updated.live_state || {});
           }
         },
       });
@@ -115,23 +144,106 @@
     }
   });
 
-  function showBuzzScreen() {
+  function showPlayScreen() {
     waitingMsg.style.display = 'none';
-    buzzScreen.style.display = 'block';
+    playScreen.style.display = 'block';
+  }
+
+  function render(state) {
+    if (state.qIndex !== lastQIndex) {
+      lastQIndex = state.qIndex;
+      hasAnsweredThisQuestion = false;
+      buzzStatus.textContent = '';
+    }
+
+    if (!state.screen || state.screen !== 'gameScreen') {
+      qContext.textContent = '';
+      qText.textContent = "En attente que l'hote configure la partie...";
+      turnMsg.textContent = '';
+      buzzBtn.style.display = 'none';
+      choicesGrid.style.display = 'none';
+      return;
+    }
+
+    qContext.textContent = `${state.qCounter || ''}  ${state.diffLabel || ''}`;
+    qText.textContent = state.questionText || '...';
+
+    const iAmActive = state.activePlayerIdx === myIndex;
+    const someoneActive = state.activePlayerIdx !== null && state.activePlayerIdx !== undefined;
+
+    if (state.revealed) {
+      // Question terminee : afficher le resultat, cacher buzz + choix actifs
+      buzzBtn.style.display = 'none';
+      turnMsg.textContent = iAmActive ? 'Reponse envoyee !' : '';
+      renderChoices(state, true);
+      return;
+    }
+
+    if (!someoneActive) {
+      // Personne n'a buzze : bouton BUZZ actif
+      buzzBtn.style.display = 'inline-block';
+      buzzBtn.disabled = false;
+      turnMsg.textContent = 'Appuie des que tu connais la reponse !';
+      choicesGrid.style.display = 'none';
+      choicesGrid.innerHTML = '';
+    } else if (iAmActive) {
+      // C'est mon tour : choix de reponse
+      buzzBtn.style.display = 'none';
+      turnMsg.textContent = 'A toi de repondre !';
+      renderChoices(state, false);
+    } else {
+      // Quelqu'un d'autre a buzze
+      buzzBtn.style.display = 'none';
+      turnMsg.textContent = 'Un autre joueur a buzze en premier...';
+      choicesGrid.style.display = 'none';
+      choicesGrid.innerHTML = '';
+    }
+  }
+
+  function renderChoices(state, revealedMode) {
+    if (!state.choices || state.choices.length === 0) {
+      choicesGrid.style.display = 'none';
+      return;
+    }
+    choicesGrid.style.display = 'grid';
+    choicesGrid.innerHTML = state.choices.map((c) => {
+      let cls = 'choice-btn';
+      if (revealedMode && state.correctText === c.text) cls += ' correct';
+      const disabled = revealedMode || hasAnsweredThisQuestion;
+      return `<button class="${cls}" data-val="${escapeHtml(c.text)}" ${disabled ? 'disabled' : ''}>${escapeHtml(c.letter)}. ${escapeHtml(c.text)}</button>`;
+    }).join('');
+
+    if (!revealedMode) {
+      choicesGrid.querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (hasAnsweredThisQuestion) return;
+          hasAnsweredThisQuestion = true;
+          choicesGrid.querySelectorAll('.choice-btn').forEach((b) => (b.disabled = true));
+          buzzStatus.textContent = 'Reponse envoyee...';
+          try {
+            await submitAnswer(currentRoom.id, currentPlayer.id, lastQIndex ?? 0, btn.dataset.val);
+          } catch (err) {
+            buzzStatus.textContent = '⚠️ ' + err.message;
+          }
+        });
+      });
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   buzzBtn.addEventListener('click', async () => {
     buzzBtn.disabled = true;
     buzzStatus.textContent = 'Buzz envoye...';
     try {
-      await buzz(currentRoom.id, currentPlayer.id, 0);
+      await buzz(currentRoom.id, currentPlayer.id, lastQIndex ?? 0);
     } catch (err) {
       buzzStatus.textContent = '⚠️ ' + err.message;
-    } finally {
-      setTimeout(() => {
-        buzzBtn.disabled = false;
-        buzzStatus.textContent = '';
-      }, 1800);
+      buzzBtn.disabled = false;
     }
   });
 </script>
