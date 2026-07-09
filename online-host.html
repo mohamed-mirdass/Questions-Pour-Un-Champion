@@ -18,8 +18,7 @@
   .slot-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
   .slot-name{font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #status-msg{color:var(--text-dim);margin-top:14px}
-  #winner-box{min-height:40px;font-size:22px;font-weight:900;color:var(--gold);margin:18px 0}
-  .q-title{font-family:ui-sans-serif,system-ui,sans-serif;font-size:32px;margin:6px 0}
+  .hint{color:var(--text-dim);font-size:12px;margin-top:10px}
 </style>
 </head>
 <body class="page-online">
@@ -48,116 +47,13 @@
         <div class="slots-grid" id="slots-grid"></div>
 
         <button class="btn btn-primary btn-start" id="start-btn" disabled>Lancer la partie</button>
-      </div>
-
-      <div id="quiz-panel" style="display:none;">
-        <div class="eyebrow">Question</div>
-        <h2 class="q-title"><span id="q-num">1</span></h2>
-        <div id="winner-box"></div>
-        <button class="btn btn-primary btn-start" id="next-btn">Question suivante</button>
+        <p class="hint">Tu seras redirige vers le plateau de jeu normal, avec les noms deja remplis.</p>
       </div>
     </div>
   </div>
 </main>
 
 <script type="module">
-  import { createRoom, subscribeToRoom, getPlayers, startGame, nextQuestion } from './assets/js/online/room.js';
+  import { createRoom, subscribeToRoom, getPlayers, startGame } from './assets/js/online/room.js';
 
   const statusMsg = document.getElementById('status-msg');
-  const roomInfo = document.getElementById('room-info');
-  const roomCodeEl = document.getElementById('room-code');
-  const qrImg = document.getElementById('qr-img');
-  const slotsGrid = document.getElementById('slots-grid');
-  const startBtn = document.getElementById('start-btn');
-  const quizPanel = document.getElementById('quiz-panel');
-  const qNumEl = document.getElementById('q-num');
-  const winnerBox = document.getElementById('winner-box');
-  const nextBtn = document.getElementById('next-btn');
-
-  const MAX_SLOTS = 4;
-  let players = [];
-  let currentRoom = null;
-  let currentQuestionIndex = 0;
-  let currentWinner = null;
-
-  function renderSlots(list) {
-    players = list;
-    let html = '';
-    for (let i = 0; i < MAX_SLOTS; i++) {
-      const p = players[i];
-      if (p) {
-        html += `<div class="slot filled"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">${escapeHtml(p.name)}</div></div>`;
-      } else {
-        html += `<div class="slot robot"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">Robot ${i + 1}</div></div>`;
-      }
-    }
-    slotsGrid.innerHTML = html;
-    startBtn.disabled = players.length === 0;
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  (async () => {
-    try {
-      const { room } = await createRoom();
-      currentRoom = room;
-
-      roomCodeEl.textContent = room.code;
-      const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
-
-      statusMsg.style.display = 'none';
-      roomInfo.style.display = 'block';
-
-      renderSlots(await getPlayers(room.id));
-
-      subscribeToRoom(room.id, {
-        onPlayersChange: async () => renderSlots(await getPlayers(room.id)),
-        onBuzz: (payload) => {
-          const b = payload.new;
-          if (b.question_index !== currentQuestionIndex) return;
-          if (currentWinner) return;
-          const player = players.find(p => p.id === b.player_id);
-          currentWinner = { name: player?.name || 'Inconnu', id: b.player_id };
-          winnerBox.textContent = `🏆 ${currentWinner.name} a buzze en premier !`;
-        },
-      });
-    } catch (err) {
-      statusMsg.textContent = '⚠️ ' + err.message;
-    }
-  })();
-
-  startBtn.addEventListener('click', async () => {
-    try {
-      startBtn.disabled = true;
-      await startGame(currentRoom.id);
-      currentQuestionIndex = 0;
-      currentWinner = null;
-      qNumEl.textContent = currentQuestionIndex + 1;
-      winnerBox.textContent = 'En attente du buzz...';
-      roomInfo.style.display = 'none';
-      quizPanel.style.display = 'block';
-    } catch (err) {
-      alert(err.message);
-      startBtn.disabled = false;
-    }
-  });
-
-  nextBtn.addEventListener('click', async () => {
-    currentQuestionIndex++;
-    currentWinner = null;
-    winnerBox.textContent = 'En attente du buzz...';
-    qNumEl.textContent = currentQuestionIndex + 1;
-    try {
-      await nextQuestion(currentRoom.id, currentQuestionIndex);
-    } catch (err) {
-      alert(err.message);
-    }
-  });
-</script>
-</body>
-</html>
