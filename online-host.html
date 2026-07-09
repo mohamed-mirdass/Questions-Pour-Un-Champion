@@ -57,3 +57,69 @@
   import { createRoom, subscribeToRoom, getPlayers, startGame } from './assets/js/online/room.js';
 
   const statusMsg = document.getElementById('status-msg');
+  const roomInfo = document.getElementById('room-info');
+  const roomCodeEl = document.getElementById('room-code');
+  const qrImg = document.getElementById('qr-img');
+  const slotsGrid = document.getElementById('slots-grid');
+  const startBtn = document.getElementById('start-btn');
+
+  const MAX_SLOTS = 4;
+  let players = [];
+  let currentRoom = null;
+
+  function renderSlots(list) {
+    players = list;
+    let html = '';
+    for (let i = 0; i < MAX_SLOTS; i++) {
+      const p = players[i];
+      if (p) {
+        html += `<div class="slot filled"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">${escapeHtml(p.name)}</div></div>`;
+      } else {
+        html += `<div class="slot robot"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">Robot ${i + 1}</div></div>`;
+      }
+    }
+    slotsGrid.innerHTML = html;
+    startBtn.disabled = players.length === 0;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  (async () => {
+    try {
+      const { room } = await createRoom();
+      currentRoom = room;
+
+      roomCodeEl.textContent = room.code;
+      const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
+
+      statusMsg.style.display = 'none';
+      roomInfo.style.display = 'block';
+
+      renderSlots(await getPlayers(room.id));
+
+      subscribeToRoom(room.id, {
+        onPlayersChange: async () => renderSlots(await getPlayers(room.id)),
+      });
+    } catch (err) {
+      statusMsg.textContent = '⚠️ ' + err.message;
+    }
+  })();
+
+  startBtn.addEventListener('click', async () => {
+    try {
+      startBtn.disabled = true;
+      await startGame(currentRoom.id);
+      location.href = `index.html?room=${currentRoom.code}`;
+    } catch (err) {
+      alert(err.message);
+      startBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
