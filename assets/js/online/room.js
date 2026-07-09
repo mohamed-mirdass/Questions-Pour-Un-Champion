@@ -97,7 +97,45 @@ export function subscribeToRoom(roomId, callbacks = {}) {
     )
     .subscribe();
 
-  return channel; // call supabase.removeChannel(channel) when done
+  return channel;
+}
+
+export async function startGame(roomId) {
+  try {
+    const { error } = await supabase
+      .from('rooms')
+      .update({ status: 'playing', current_question_index: 0 })
+      .eq('id', roomId);
+    if (error) throw error;
+  } catch (err) {
+    console.error('[startGame] failed:', err);
+    throw new Error('Could not start the game.');
+  }
+}
+
+export async function nextQuestion(roomId, newIndex) {
+  try {
+    const { error } = await supabase
+      .from('rooms')
+      .update({ current_question_index: newIndex })
+      .eq('id', roomId);
+    if (error) throw error;
+  } catch (err) {
+    console.error('[nextQuestion] failed:', err);
+    throw new Error('Could not advance to the next question.');
+  }
+}
+
+export async function buzz(roomId, playerId, questionIndex) {
+  try {
+    const { error } = await supabase
+      .from('buzzes')
+      .insert({ room_id: roomId, player_id: playerId, question_index: questionIndex });
+    if (error) throw error;
+  } catch (err) {
+    console.error('[buzz] failed:', err);
+    throw new Error('Buzz failed, try again.');
+  }
 }
 
 export async function getPlayers(roomId) {
