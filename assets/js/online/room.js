@@ -1,5 +1,5 @@
 // assets/js/online/room.js
-// منطق: إنشاء غرفة (Host) / الانضمام لغرفة (Player)
+// Room logic: Host creates a room / Players join a room
 
 import { supabase } from './supabaseClient.js';
 
@@ -19,50 +19,61 @@ function generateHostSecret() {
 export async function createRoom() {
   const code = generateRoomCode();
   const hostSecret = generateHostSecret();
+
   try {
     const { data, error } = await supabase
       .from('rooms')
       .insert({ code, host_secret: hostSecret, status: 'lobby' })
       .select()
       .single();
+
     if (error) throw error;
+
     localStorage.setItem('qpc_host_secret', hostSecret);
     localStorage.setItem('qpc_room_id', data.id);
+
     return { room: data, hostSecret };
   } catch (err) {
-    console.error('[createRoom] فشل إنشاء الغرفة:', err);
-    throw new Error('ما قدرناش نخلقو الغرفة. تأكد من الاتصال بالانترنت وعاود.');
+    console.error('[createRoom] failed:', err);
+    throw new Error('Could not create the room. Check your internet connection and try again.');
   }
 }
 
 export async function joinRoom(code, playerName) {
   if (!code || !playerName?.trim()) {
-    throw new Error('خاصك تدخل الكود والاسم.');
+    throw new Error('Please enter both a room code and a name.');
   }
+
   try {
     const { data: room, error: roomErr } = await supabase
       .from('rooms')
       .select('*')
       .eq('code', code.toUpperCase().trim())
       .single();
+
     if (roomErr || !room) {
-      throw new Error('الكود غير صحيح، ولا الغرفة ماكاينتش.');
+      throw new Error('Invalid code, or the room does not exist.');
     }
+
     if (room.status === 'finished') {
-      throw new Error('هاد الجولة سالات.');
+      throw new Error('This game has already ended.');
     }
+
     const { data: player, error: playerErr } = await supabase
       .from('players')
       .insert({ room_id: room.id, name: playerName.trim() })
       .select()
       .single();
+
     if (playerErr) throw playerErr;
+
     localStorage.setItem('qpc_player_id', player.id);
     localStorage.setItem('qpc_room_id', room.id);
+
     return { room, player };
   } catch (err) {
-    console.error('[joinRoom] فشل الانضمام:', err);
-    throw err instanceof Error ? err : new Error('وقع مشكل، عاود المحاولة.');
+    console.error('[joinRoom] failed:', err);
+    throw err instanceof Error ? err : new Error('Something went wrong, please try again.');
   }
 }
 
@@ -85,7 +96,8 @@ export function subscribeToRoom(roomId, callbacks = {}) {
       (payload) => callbacks.onBuzz?.(payload)
     )
     .subscribe();
-  return channel;
+
+  return channel; // call supabase.removeChannel(channel) when done
 }
 
 export async function getPlayers(roomId) {
@@ -95,10 +107,11 @@ export async function getPlayers(roomId) {
       .select('*')
       .eq('room_id', roomId)
       .order('joined_at', { ascending: true });
+
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('[getPlayers] فشل جلب اللاعبين:', err);
+    console.error('[getPlayers] failed:', err);
     return [];
   }
 }
