@@ -1,157 +1,151 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Online Game — Host</title>
-  <link rel="stylesheet" href="assets/css/styles.css" />
-  <style>
-    .online-host-wrap {
-      max-width: 480px;
-      margin: 40px auto;
-      text-align: center;
-      padding: 24px;
-    }
-    .room-code {
-      font-size: 48px;
-      font-weight: bold;
-      letter-spacing: 8px;
-      margin: 16px 0;
-    }
-    .qr-box img {
-      width: 220px;
-      height: 220px;
-      background: #fff;
-      padding: 8px;
-      border-radius: 12px;
-    }
-    .players-list {
-      margin-top: 24px;
-      text-align: left;
-    }
-    .players-list li {
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    #status-msg { margin-top: 12px; opacity: 0.8; }
-    #winner-box { color: #ffd166; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Salle en ligne (Host)</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+  .host-wrap{width:min(560px,100%);text-align:center;margin:0 auto}
+  .room-code{font-family:ui-sans-serif,system-ui,sans-serif;font-size:56px;font-weight:900;letter-spacing:10px;color:var(--accent);margin:14px 0}
+  .qr-box{display:flex;justify-content:center;margin:18px 0}
+  .qr-box img{width:220px;height:220px;background:#fff;padding:10px;border-radius:var(--radius)}
+  .players-list{list-style:none;margin:16px 0;padding:0;text-align:left;display:grid;gap:8px}
+  .players-list li{padding:12px 14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--card-border);font-weight:800}
+  #status-msg{color:var(--text-dim);margin-top:14px}
+  #winner-box{min-height:40px;font-size:22px;font-weight:900;color:var(--gold);margin:18px 0}
+  .q-title{font-family:ui-sans-serif,system-ui,sans-serif;font-size:32px;margin:6px 0}
+</style>
 </head>
-<body>
-  <div class="online-host-wrap">
-    <h1>🎮 Online Game</h1>
-    <p id="status-msg">Creating room...</p>
+<body class="page-online">
+<div id="particles" aria-hidden="true"></div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="online.html" data-nav>En ligne</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+  <div class="screen active">
+    <div class="card host-wrap fade-in">
+      <div class="eyebrow">Partie en ligne</div>
+      <p id="status-msg">Creation de la salle...</p>
 
-    <div id="room-info" style="display:none;">
-      <div class="room-code" id="room-code">----</div>
-      <div class="qr-box">
-        <img id="qr-img" alt="Join QR code" />
+      <div id="room-info" style="display:none;">
+        <div class="room-code" id="room-code">----</div>
+        <div class="qr-box"><img id="qr-img" alt="QR code pour rejoindre"></div>
+        <p style="color:var(--text-dim);font-size:13px">Scanne le QR code ou va sur <code>online-join.html</code></p>
+
+        <div class="label">Joueurs (<span id="player-count">0</span>)</div>
+        <ul class="players-list" id="players-list"></ul>
+
+        <button class="btn btn-primary btn-start" id="start-btn" disabled>Lancer la partie</button>
       </div>
-      <p>Scan the QR code or go to <code>online-join.html</code></p>
 
-      <h3>Players (<span id="player-count">0</span>)</h3>
-      <ul class="players-list" id="players-list"></ul>
-
-      <button id="start-btn" disabled>Start Game</button>
-    </div>
-
-    <div id="quiz-panel" style="display:none;">
-      <h2>Question <span id="q-num">1</span></h2>
-      <div id="winner-box" style="min-height: 40px; font-size: 20px; font-weight: bold; margin: 16px 0;"></div>
-      <button id="next-btn">Next Question</button>
+      <div id="quiz-panel" style="display:none;">
+        <div class="eyebrow">Question</div>
+        <h2 class="q-title"><span id="q-num">1</span></h2>
+        <div id="winner-box"></div>
+        <button class="btn btn-primary btn-start" id="next-btn">Question suivante</button>
+      </div>
     </div>
   </div>
+</main>
 
-  <script type="module">
-    import { createRoom, subscribeToRoom, getPlayers, startGame, nextQuestion } from './assets/js/online/room.js';
+<script type="module">
+  import { createRoom, subscribeToRoom, getPlayers, startGame, nextQuestion } from './assets/js/online/room.js';
 
-    const statusMsg = document.getElementById('status-msg');
-    const roomInfo = document.getElementById('room-info');
-    const roomCodeEl = document.getElementById('room-code');
-    const qrImg = document.getElementById('qr-img');
-    const playersList = document.getElementById('players-list');
-    const playerCount = document.getElementById('player-count');
-    const startBtn = document.getElementById('start-btn');
-    const quizPanel = document.getElementById('quiz-panel');
-    const qNumEl = document.getElementById('q-num');
-    const winnerBox = document.getElementById('winner-box');
-    const nextBtn = document.getElementById('next-btn');
+  const statusMsg = document.getElementById('status-msg');
+  const roomInfo = document.getElementById('room-info');
+  const roomCodeEl = document.getElementById('room-code');
+  const qrImg = document.getElementById('qr-img');
+  const playersList = document.getElementById('players-list');
+  const playerCount = document.getElementById('player-count');
+  const startBtn = document.getElementById('start-btn');
+  const quizPanel = document.getElementById('quiz-panel');
+  const qNumEl = document.getElementById('q-num');
+  const winnerBox = document.getElementById('winner-box');
+  const nextBtn = document.getElementById('next-btn');
 
-    let players = [];
-    let currentRoom = null;
-    let currentQuestionIndex = 0;
-    let currentWinner = null;
+  let players = [];
+  let currentRoom = null;
+  let currentQuestionIndex = 0;
+  let currentWinner = null;
 
-    function renderPlayers(list) {
-      players = list;
-      playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} pts</li>`).join('');
-      playerCount.textContent = players.length;
-      startBtn.disabled = players.length === 0;
+  function renderPlayers(list) {
+    players = list;
+    playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} pts</li>`).join('');
+    playerCount.textContent = players.length;
+    startBtn.disabled = players.length === 0;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  (async () => {
+    try {
+      const { room } = await createRoom();
+      currentRoom = room;
+
+      roomCodeEl.textContent = room.code;
+      const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
+
+      statusMsg.style.display = 'none';
+      roomInfo.style.display = 'block';
+
+      renderPlayers(await getPlayers(room.id));
+
+      subscribeToRoom(room.id, {
+        onPlayersChange: async () => renderPlayers(await getPlayers(room.id)),
+        onBuzz: (payload) => {
+          const b = payload.new;
+          if (b.question_index !== currentQuestionIndex) return;
+          if (currentWinner) return;
+          const player = players.find(p => p.id === b.player_id);
+          currentWinner = { name: player?.name || 'Inconnu', id: b.player_id };
+          winnerBox.textContent = `🏆 ${currentWinner.name} a buzze en premier !`;
+        },
+      });
+    } catch (err) {
+      statusMsg.textContent = '⚠️ ' + err.message;
     }
+  })();
 
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    (async () => {
-      try {
-        const { room } = await createRoom();
-        currentRoom = room;
-
-        roomCodeEl.textContent = room.code;
-        const joinUrl = `${location.origin}${location.pathname.replace('online-host.html', 'online-join.html')}?code=${room.code}`;
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
-
-        statusMsg.style.display = 'none';
-        roomInfo.style.display = 'block';
-
-        renderPlayers(await getPlayers(room.id));
-
-        subscribeToRoom(room.id, {
-          onPlayersChange: async () => renderPlayers(await getPlayers(room.id)),
-          onBuzz: (payload) => {
-            const b = payload.new;
-            if (b.question_index !== currentQuestionIndex) return;
-            if (currentWinner) return;
-            const player = players.find(p => p.id === b.player_id);
-            currentWinner = { name: player?.name || 'Unknown', id: b.player_id };
-            winnerBox.textContent = `🏆 ${currentWinner.name} buzzed first!`;
-          },
-        });
-      } catch (err) {
-        statusMsg.textContent = '⚠️ ' + err.message;
-      }
-    })();
-
-    startBtn.addEventListener('click', async () => {
-      try {
-        startBtn.disabled = true;
-        await startGame(currentRoom.id);
-        currentQuestionIndex = 0;
-        currentWinner = null;
-        qNumEl.textContent = currentQuestionIndex + 1;
-        winnerBox.textContent = 'Waiting for buzz...';
-        roomInfo.style.display = 'none';
-        quizPanel.style.display = 'block';
-      } catch (err) {
-        alert(err.message);
-        startBtn.disabled = false;
-      }
-    });
-
-    nextBtn.addEventListener('click', async () => {
-      currentQuestionIndex++;
+  startBtn.addEventListener('click', async () => {
+    try {
+      startBtn.disabled = true;
+      await startGame(currentRoom.id);
+      currentQuestionIndex = 0;
       currentWinner = null;
-      winnerBox.textContent = 'Waiting for buzz...';
       qNumEl.textContent = currentQuestionIndex + 1;
-      try {
-        await nextQuestion(currentRoom.id, currentQuestionIndex);
-      } catch (err) {
-        alert(err.message);
-      }
-    });
-  </script>
+      winnerBox.textContent = 'En attente du buzz...';
+      roomInfo.style.display = 'none';
+      quizPanel.style.display = 'block';
+    } catch (err) {
+      alert(err.message);
+      startBtn.disabled = false;
+    }
+  });
+
+  nextBtn.addEventListener('click', async () => {
+    currentQuestionIndex++;
+    currentWinner = null;
+    winnerBox.textContent = 'En attente du buzz...';
+    qNumEl.textContent = currentQuestionIndex + 1;
+    try {
+      await nextQuestion(currentRoom.id, currentQuestionIndex);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+</script>
 </body>
 </html>
