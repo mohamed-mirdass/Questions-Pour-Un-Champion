@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Partie en ligne — Host</title>
+  <title>Online Game — Host</title>
   <link rel="stylesheet" href="assets/css/styles.css" />
   <style>
     .online-host-wrap {
@@ -38,20 +38,20 @@
 </head>
 <body>
   <div class="online-host-wrap">
-    <h1>🎮 Partie en ligne</h1>
-    <p id="status-msg">جارٍ إنشاء الغرفة...</p>
+    <h1>🎮 Online Game</h1>
+    <p id="status-msg">Creating room...</p>
 
     <div id="room-info" style="display:none;">
       <div class="room-code" id="room-code">----</div>
       <div class="qr-box">
-        <img id="qr-img" alt="QR code للانضمام" />
+        <img id="qr-img" alt="Join QR code" />
       </div>
-      <p>سكانيو الـ QR ولا دخلو الكود فـ <code>online-join.html</code></p>
+      <p>Scan the QR code or go to <code>online-join.html</code></p>
 
-      <h3>اللاعبين (<span id="player-count">0</span>)</h3>
+      <h3>Players (<span id="player-count">0</span>)</h3>
       <ul class="players-list" id="players-list"></ul>
 
-      <button id="start-btn" disabled>بدا اللعبة</button>
+      <button id="start-btn" disabled>Start Game</button>
     </div>
   </div>
 
@@ -67,7 +67,7 @@
     const startBtn = document.getElementById('start-btn');
 
     function renderPlayers(players) {
-      playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} نقطة</li>`).join('');
+      playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} pts</li>`).join('');
       playerCount.textContent = players.length;
       startBtn.disabled = players.length === 0;
     }
@@ -100,7 +100,7 @@
     })();
 
     startBtn.addEventListener('click', () => {
-      alert('بدا اللعبة — غادي يتزاد فاليوم 2/3 ديال البلان');
+      alert('Start Game — coming in Day 2/3 of the plan');
     });
   </script>
 </body>
