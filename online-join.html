@@ -1,161 +1,160 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Online Game — Join</title>
-  <link rel="stylesheet" href="assets/css/styles.css" />
-  <style>
-    .join-wrap {
-      max-width: 380px;
-      margin: 60px auto;
-      padding: 24px;
-      text-align: center;
-    }
-    .join-wrap input {
-      width: 100%;
-      padding: 12px;
-      font-size: 18px;
-      margin: 8px 0;
-      box-sizing: border-box;
-      text-align: center;
-    }
-    #join-code { text-transform: uppercase; letter-spacing: 4px; }
-    #join-error { color: #ff6b6b; margin-top: 10px; min-height: 20px; }
-    #waiting-msg { display:none; margin-top: 20px; }
-    #buzz-screen { display:none; text-align:center; margin-top: 20px; }
-    #buzz-btn {
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      background: #e63946;
-      color: #fff;
-      font-size: 28px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-    }
-    #buzz-btn:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    #buzz-status { margin-top: 16px; font-size: 18px; min-height: 24px; }
-    #q-label { margin-bottom: 12px; opacity: 0.8; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Rejoindre une partie</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+  .join-wrap{width:min(420px,100%);text-align:center;margin:0 auto}
+  .join-wrap .inp{margin:8px 0;text-align:center}
+  #join-code{text-transform:uppercase;letter-spacing:4px}
+  #join-error{color:var(--danger);margin-top:10px;min-height:20px;font-weight:800;font-size:13px}
+  #waiting-msg{display:none;margin-top:20px;color:var(--text-dim)}
+  #buzz-screen{display:none;text-align:center;margin-top:10px}
+  #buzz-btn{
+    width:200px;height:200px;border-radius:50%;border:0;color:#fff;
+    background:radial-gradient(circle at 35% 25%,#ff9cae,#ff3156 48%,#7a0e24);
+    box-shadow:0 0 0 10px rgba(255,84,112,.08),0 24px 58px rgba(255,84,112,.36);
+    font-family:ui-sans-serif,system-ui,sans-serif;font-weight:900;font-size:26px;
+    letter-spacing:.08em;cursor:pointer;animation:buzzPulse 2.4s infinite;
+  }
+  #buzz-btn:disabled{animation:none;background:var(--surface);box-shadow:none;color:var(--muted);cursor:not-allowed}
+  @keyframes buzzPulse{50%{transform:translateY(-7px)}}
+  #buzz-status{margin-top:16px;font-size:16px;font-weight:800;min-height:24px}
+  #q-label{margin-bottom:14px;color:var(--text-dim);font-weight:800}
+</style>
 </head>
-<body>
-  <div class="join-wrap">
-    <h1>🙋‍♂️ Join Game</h1>
-    <form id="join-form">
-      <input id="join-code" placeholder="Room code" maxlength="6" required autocomplete="off" />
-      <input id="join-name" placeholder="Your name" maxlength="20" required autocomplete="off" />
-      <button type="submit">Join</button>
-    </form>
-    <p id="join-error"></p>
-    <p id="waiting-msg">✅ You're in! Waiting for the host to start the game...</p>
+<body class="page-online">
+<div id="particles" aria-hidden="true"></div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="online.html" data-nav>En ligne</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+  <div class="screen active">
+    <div class="card join-wrap fade-in">
+      <div class="eyebrow">Partie en ligne</div>
+      <h2 style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:28px;margin:6px 0 18px">Rejoindre la partie</h2>
 
-    <div id="buzz-screen">
-      <p id="q-label">Question <span id="q-num">1</span></p>
-      <button id="buzz-btn">BUZZ</button>
-      <p id="buzz-status"></p>
+      <form id="join-form">
+        <input id="join-code" class="inp" placeholder="Code de la salle" maxlength="6" required autocomplete="off">
+        <input id="join-name" class="inp" placeholder="Ton nom" maxlength="20" required autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-start">Rejoindre</button>
+      </form>
+      <p id="join-error"></p>
+      <p id="waiting-msg">✅ Tu es dans la salle ! En attente du lancement par l'hote...</p>
+
+      <div id="buzz-screen">
+        <p id="q-label">Question <span id="q-num">1</span></p>
+        <button id="buzz-btn">BUZZ</button>
+        <p id="buzz-status"></p>
+      </div>
     </div>
   </div>
+</main>
 
-  <script type="module">
-    import { joinRoom, subscribeToRoom, buzz } from './assets/js/online/room.js';
+<script type="module">
+  import { joinRoom, subscribeToRoom, buzz } from './assets/js/online/room.js';
 
-    const form = document.getElementById('join-form');
-    const codeInput = document.getElementById('join-code');
-    const nameInput = document.getElementById('join-name');
-    const errorEl = document.getElementById('join-error');
-    const waitingMsg = document.getElementById('waiting-msg');
-    const buzzScreen = document.getElementById('buzz-screen');
-    const buzzBtn = document.getElementById('buzz-btn');
-    const buzzStatus = document.getElementById('buzz-status');
-    const qNumEl = document.getElementById('q-num');
+  const form = document.getElementById('join-form');
+  const codeInput = document.getElementById('join-code');
+  const nameInput = document.getElementById('join-name');
+  const errorEl = document.getElementById('join-error');
+  const waitingMsg = document.getElementById('waiting-msg');
+  const buzzScreen = document.getElementById('buzz-screen');
+  const buzzBtn = document.getElementById('buzz-btn');
+  const buzzStatus = document.getElementById('buzz-status');
+  const qNumEl = document.getElementById('q-num');
 
-    let currentRoom = null;
-    let currentPlayer = null;
-    let currentQuestionIndex = 0;
-    let hasBuzzed = false;
-    let hasStarted = false; // avoids relying on reading CSS via .style.display
+  let currentRoom = null;
+  let currentPlayer = null;
+  let currentQuestionIndex = 0;
+  let hasBuzzed = false;
+  let hasStarted = false;
 
-    const params = new URLSearchParams(location.search);
-    if (params.get('code')) codeInput.value = params.get('code');
+  const params = new URLSearchParams(location.search);
+  if (params.get('code')) codeInput.value = params.get('code');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorEl.textContent = '';
-      const submitBtn = form.querySelector('button');
-      submitBtn.disabled = true;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    const submitBtn = form.querySelector('button');
+    submitBtn.disabled = true;
 
-      try {
-        const { room, player } = await joinRoom(codeInput.value, nameInput.value);
-        currentRoom = room;
-        currentPlayer = player;
-        currentQuestionIndex = room.current_question_index ?? 0;
+    try {
+      const { room, player } = await joinRoom(codeInput.value, nameInput.value);
+      currentRoom = room;
+      currentPlayer = player;
+      currentQuestionIndex = room.current_question_index ?? 0;
 
-        form.style.display = 'none';
+      form.style.display = 'none';
 
-        if (room.status === 'playing') {
-          hasStarted = true;
-          showBuzzScreen();
-        } else {
-          waitingMsg.style.display = 'block';
-        }
-
-        subscribeToRoom(room.id, {
-          onRoomChange: (payload) => {
-            const updated = payload.new;
-            if (updated.status === 'playing' && !hasStarted) {
-              hasStarted = true;
-              currentQuestionIndex = updated.current_question_index ?? currentQuestionIndex;
-              waitingMsg.style.display = 'none';
-              showBuzzScreen();
-            }
-            if (hasStarted && updated.current_question_index !== currentQuestionIndex) {
-              currentQuestionIndex = updated.current_question_index;
-              hasBuzzed = false;
-              buzzBtn.disabled = false;
-              buzzStatus.textContent = '';
-              qNumEl.textContent = currentQuestionIndex + 1;
-            }
-          },
-          onBuzz: (payload) => {
-            const b = payload.new;
-            if (b.question_index !== currentQuestionIndex) return;
-            if (b.player_id === currentPlayer.id) {
-              buzzStatus.textContent = "You buzzed! ⏱️";
-            } else if (!hasBuzzed) {
-              buzzStatus.textContent = 'Someone else buzzed first.';
-            }
-          },
-        });
-      } catch (err) {
-        errorEl.textContent = err.message;
-        submitBtn.disabled = false;
+      if (room.status === 'playing') {
+        hasStarted = true;
+        showBuzzScreen();
+      } else {
+        waitingMsg.style.display = 'block';
       }
-    });
 
-    function showBuzzScreen() {
-      waitingMsg.style.display = 'none';
-      buzzScreen.style.display = 'block';
-      qNumEl.textContent = currentQuestionIndex + 1;
+      subscribeToRoom(room.id, {
+        onRoomChange: (payload) => {
+          const updated = payload.new;
+          if (updated.status === 'playing' && !hasStarted) {
+            hasStarted = true;
+            currentQuestionIndex = updated.current_question_index ?? currentQuestionIndex;
+            waitingMsg.style.display = 'none';
+            showBuzzScreen();
+          }
+          if (hasStarted && updated.current_question_index !== currentQuestionIndex) {
+            currentQuestionIndex = updated.current_question_index;
+            hasBuzzed = false;
+            buzzBtn.disabled = false;
+            buzzStatus.textContent = '';
+            qNumEl.textContent = currentQuestionIndex + 1;
+          }
+        },
+        onBuzz: (payload) => {
+          const b = payload.new;
+          if (b.question_index !== currentQuestionIndex) return;
+          if (b.player_id === currentPlayer.id) {
+            buzzStatus.textContent = 'Tu as buzze ! ⏱️';
+          } else if (!hasBuzzed) {
+            buzzStatus.textContent = 'Quelqu\'un a buzze avant toi.';
+          }
+        },
+      });
+    } catch (err) {
+      errorEl.textContent = err.message;
+      submitBtn.disabled = false;
     }
+  });
 
-    buzzBtn.addEventListener('click', async () => {
-      if (hasBuzzed) return;
-      hasBuzzed = true;
-      buzzBtn.disabled = true;
-      buzzStatus.textContent = 'Buzzing...';
-      try {
-        await buzz(currentRoom.id, currentPlayer.id, currentQuestionIndex);
-      } catch (err) {
-        buzzStatus.textContent = '⚠️ ' + err.message;
-        hasBuzzed = false;
-        buzzBtn.disabled = false;
-      }
-    });
-  </script>
+  function showBuzzScreen() {
+    waitingMsg.style.display = 'none';
+    buzzScreen.style.display = 'block';
+    qNumEl.textContent = currentQuestionIndex + 1;
+  }
+
+  buzzBtn.addEventListener('click', async () => {
+    if (hasBuzzed) return;
+    hasBuzzed = true;
+    buzzBtn.disabled = true;
+    buzzStatus.textContent = 'Buzz envoye...';
+    try {
+      await buzz(currentRoom.id, currentPlayer.id, currentQuestionIndex);
+    } catch (err) {
+      buzzStatus.textContent = '⚠️ ' + err.message;
+      hasBuzzed = false;
+      buzzBtn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>
