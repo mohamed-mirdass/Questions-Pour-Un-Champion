@@ -23,6 +23,24 @@
     #join-code { text-transform: uppercase; letter-spacing: 4px; }
     #join-error { color: #ff6b6b; margin-top: 10px; min-height: 20px; }
     #waiting-msg { display:none; margin-top: 20px; }
+    #buzz-screen { display:none; text-align:center; margin-top: 20px; }
+    #buzz-btn {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: #e63946;
+      color: #fff;
+      font-size: 28px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    #buzz-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    #buzz-status { margin-top: 16px; font-size: 18px; min-height: 24px; }
+    #q-label { margin-bottom: 12px; opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -35,16 +53,31 @@
     </form>
     <p id="join-error"></p>
     <p id="waiting-msg">✅ You're in! Waiting for the host to start the game...</p>
+
+    <div id="buzz-screen">
+      <p id="q-label">Question <span id="q-num">1</span></p>
+      <button id="buzz-btn">BUZZ</button>
+      <p id="buzz-status"></p>
+    </div>
   </div>
 
   <script type="module">
-    import { joinRoom } from './assets/js/online/room.js';
+    import { joinRoom, subscribeToRoom, buzz } from './assets/js/online/room.js';
 
     const form = document.getElementById('join-form');
     const codeInput = document.getElementById('join-code');
     const nameInput = document.getElementById('join-name');
     const errorEl = document.getElementById('join-error');
     const waitingMsg = document.getElementById('waiting-msg');
+    const buzzScreen = document.getElementById('buzz-screen');
+    const buzzBtn = document.getElementById('buzz-btn');
+    const buzzStatus = document.getElementById('buzz-status');
+    const qNumEl = document.getElementById('q-num');
+
+    let currentRoom = null;
+    let currentPlayer = null;
+    let currentQuestionIndex = 0;
+    let hasBuzzed = false;
 
     const params = new URLSearchParams(location.search);
     if (params.get('code')) codeInput.value = params.get('code');
@@ -56,13 +89,67 @@
       submitBtn.disabled = true;
 
       try {
-        await joinRoom(codeInput.value, nameInput.value);
+        const { room, player } = await joinRoom(codeInput.value, nameInput.value);
+        currentRoom = room;
+        currentPlayer = player;
+        currentQuestionIndex = room.current_question_index ?? 0;
+
         form.style.display = 'none';
-        waitingMsg.style.display = 'block';
+
+        if (room.status === 'playing') {
+          showBuzzScreen();
+        } else {
+          waitingMsg.style.display = 'block';
+        }
+
+        subscribeToRoom(room.id, {
+          onRoomChange: (payload) => {
+            const updated = payload.new;
+            if (updated.status === 'playing' && buzzScreen.style.display === 'none') {
+              waitingMsg.style.display = 'none';
+              showBuzzScreen();
+            }
+            if (updated.current_question_index !== currentQuestionIndex) {
+              currentQuestionIndex = updated.current_question_index;
+              hasBuzzed = false;
+              buzzBtn.disabled = false;
+              buzzStatus.textContent = '';
+              qNumEl.textContent = currentQuestionIndex + 1;
+            }
+          },
+          onBuzz: (payload) => {
+            const b = payload.new;
+            if (b.question_index !== currentQuestionIndex) return;
+            if (b.player_id === currentPlayer.id) {
+              buzzStatus.textContent = "You buzzed! ⏱️";
+            } else if (!hasBuzzed) {
+              buzzStatus.textContent = 'Someone else buzzed first.';
+            }
+          },
+        });
       } catch (err) {
         errorEl.textContent = err.message;
-      } finally {
         submitBtn.disabled = false;
+      }
+    });
+
+    function showBuzzScreen() {
+      waitingMsg.style.display = 'none';
+      buzzScreen.style.display = 'block';
+      qNumEl.textContent = currentQuestionIndex + 1;
+    }
+
+    buzzBtn.addEventListener('click', async () => {
+      if (hasBuzzed) return;
+      hasBuzzed = true;
+      buzzBtn.disabled = true;
+      buzzStatus.textContent = 'Buzzing...';
+      try {
+        await buzz(currentRoom.id, currentPlayer.id, currentQuestionIndex);
+      } catch (err) {
+        buzzStatus.textContent = '⚠️ ' + err.message;
+        hasBuzzed = false;
+        buzzBtn.disabled = false;
       }
     });
   </script>
