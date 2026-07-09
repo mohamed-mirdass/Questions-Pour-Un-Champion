@@ -78,6 +78,7 @@
     let currentPlayer = null;
     let currentQuestionIndex = 0;
     let hasBuzzed = false;
+    let hasStarted = false; // avoids relying on reading CSS via .style.display
 
     const params = new URLSearchParams(location.search);
     if (params.get('code')) codeInput.value = params.get('code');
@@ -97,6 +98,7 @@
         form.style.display = 'none';
 
         if (room.status === 'playing') {
+          hasStarted = true;
           showBuzzScreen();
         } else {
           waitingMsg.style.display = 'block';
@@ -105,11 +107,13 @@
         subscribeToRoom(room.id, {
           onRoomChange: (payload) => {
             const updated = payload.new;
-            if (updated.status === 'playing' && buzzScreen.style.display === 'none') {
+            if (updated.status === 'playing' && !hasStarted) {
+              hasStarted = true;
+              currentQuestionIndex = updated.current_question_index ?? currentQuestionIndex;
               waitingMsg.style.display = 'none';
               showBuzzScreen();
             }
-            if (updated.current_question_index !== currentQuestionIndex) {
+            if (hasStarted && updated.current_question_index !== currentQuestionIndex) {
               currentQuestionIndex = updated.current_question_index;
               hasBuzzed = false;
               buzzBtn.disabled = false;
