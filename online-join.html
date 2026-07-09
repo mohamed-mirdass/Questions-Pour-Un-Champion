@@ -52,7 +52,7 @@
       <p id="waiting-msg">✅ Tu es dans la salle ! En attente du lancement par l'hote...</p>
 
       <div id="buzz-screen">
-        <p id="q-label">Question <span id="q-num">1</span></p>
+        <p id="q-label">Appuie des que tu connais la reponse !</p>
         <button id="buzz-btn">BUZZ</button>
         <p id="buzz-status"></p>
       </div>
@@ -71,12 +71,9 @@
   const buzzScreen = document.getElementById('buzz-screen');
   const buzzBtn = document.getElementById('buzz-btn');
   const buzzStatus = document.getElementById('buzz-status');
-  const qNumEl = document.getElementById('q-num');
 
   let currentRoom = null;
   let currentPlayer = null;
-  let currentQuestionIndex = 0;
-  let hasBuzzed = false;
   let hasStarted = false;
 
   const params = new URLSearchParams(location.search);
@@ -92,7 +89,6 @@
       const { room, player } = await joinRoom(codeInput.value, nameInput.value);
       currentRoom = room;
       currentPlayer = player;
-      currentQuestionIndex = room.current_question_index ?? 0;
 
       form.style.display = 'none';
 
@@ -108,25 +104,8 @@
           const updated = payload.new;
           if (updated.status === 'playing' && !hasStarted) {
             hasStarted = true;
-            currentQuestionIndex = updated.current_question_index ?? currentQuestionIndex;
             waitingMsg.style.display = 'none';
             showBuzzScreen();
-          }
-          if (hasStarted && updated.current_question_index !== currentQuestionIndex) {
-            currentQuestionIndex = updated.current_question_index;
-            hasBuzzed = false;
-            buzzBtn.disabled = false;
-            buzzStatus.textContent = '';
-            qNumEl.textContent = currentQuestionIndex + 1;
-          }
-        },
-        onBuzz: (payload) => {
-          const b = payload.new;
-          if (b.question_index !== currentQuestionIndex) return;
-          if (b.player_id === currentPlayer.id) {
-            buzzStatus.textContent = 'Tu as buzze ! ⏱️';
-          } else if (!hasBuzzed) {
-            buzzStatus.textContent = 'Quelqu\'un a buzze avant toi.';
           }
         },
       });
@@ -139,20 +118,20 @@
   function showBuzzScreen() {
     waitingMsg.style.display = 'none';
     buzzScreen.style.display = 'block';
-    qNumEl.textContent = currentQuestionIndex + 1;
   }
 
   buzzBtn.addEventListener('click', async () => {
-    if (hasBuzzed) return;
-    hasBuzzed = true;
     buzzBtn.disabled = true;
     buzzStatus.textContent = 'Buzz envoye...';
     try {
-      await buzz(currentRoom.id, currentPlayer.id, currentQuestionIndex);
+      await buzz(currentRoom.id, currentPlayer.id, 0);
     } catch (err) {
       buzzStatus.textContent = '⚠️ ' + err.message;
-      hasBuzzed = false;
-      buzzBtn.disabled = false;
+    } finally {
+      setTimeout(() => {
+        buzzBtn.disabled = false;
+        buzzStatus.textContent = '';
+      }, 1800);
     }
   });
 </script>
