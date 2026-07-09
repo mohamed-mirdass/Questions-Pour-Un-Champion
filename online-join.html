@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partie en ligne — Rejoindre</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .join-wrap {
+      max-width: 380px;
+      margin: 60px auto;
+      padding: 24px;
+      text-align: center;
+    }
+    .join-wrap input {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    #join-code { text-transform: uppercase; letter-spacing: 4px; }
+    #join-error { color: #ff6b6b; margin-top: 10px; min-height: 20px; }
+    #waiting-msg { display:none; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="join-wrap">
+    <h1>🙋‍♂️ دخول للجولة</h1>
+    <form id="join-form">
+      <input id="join-code" placeholder="كود الغرفة" maxlength="6" required autocomplete="off" />
+      <input id="join-name" placeholder="سميتك" maxlength="20" required autocomplete="off" />
+      <button type="submit">دخول</button>
+    </form>
+    <p id="join-error"></p>
+    <p id="waiting-msg">✅ دخلتي! راك كتستنى الهوست يبدا اللعبة...</p>
+  </div>
+
+  <script type="module">
+    import { joinRoom } from './assets/js/online/room.js';
+
+    const form = document.getElementById('join-form');
+    const codeInput = document.getElementById('join-code');
+    const nameInput = document.getElementById('join-name');
+    const errorEl = document.getElementById('join-error');
+    const waitingMsg = document.getElementById('waiting-msg');
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('code')) codeInput.value = params.get('code');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      const submitBtn = form.querySelector('button');
+      submitBtn.disabled = true;
+
+      try {
+        await joinRoom(codeInput.value, nameInput.value);
+        form.style.display = 'none';
+        waitingMsg.style.display = 'block';
+      } catch (err) {
+        errorEl.textContent = err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
