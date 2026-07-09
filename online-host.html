@@ -11,8 +11,12 @@
   .room-code{font-family:ui-sans-serif,system-ui,sans-serif;font-size:56px;font-weight:900;letter-spacing:10px;color:var(--accent);margin:14px 0}
   .qr-box{display:flex;justify-content:center;margin:18px 0}
   .qr-box img{width:220px;height:220px;background:#fff;padding:10px;border-radius:var(--radius)}
-  .players-list{list-style:none;margin:16px 0;padding:0;text-align:left;display:grid;gap:8px}
-  .players-list li{padding:12px 14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--card-border);font-weight:800}
+  .slots-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+  .slot{padding:14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--card-border);text-align:left;transition:.2s}
+  .slot.filled{border-color:var(--accent);background:rgba(64,224,208,.08)}
+  .slot.robot{opacity:.55;border-style:dashed}
+  .slot-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .slot-name{font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #status-msg{color:var(--text-dim);margin-top:14px}
   #winner-box{min-height:40px;font-size:22px;font-weight:900;color:var(--gold);margin:18px 0}
   .q-title{font-family:ui-sans-serif,system-ui,sans-serif;font-size:32px;margin:6px 0}
@@ -40,8 +44,8 @@
         <div class="qr-box"><img id="qr-img" alt="QR code pour rejoindre"></div>
         <p style="color:var(--text-dim);font-size:13px">Scanne le QR code ou va sur <code>online-join.html</code></p>
 
-        <div class="label">Joueurs (<span id="player-count">0</span>)</div>
-        <ul class="players-list" id="players-list"></ul>
+        <div class="label">Joueurs</div>
+        <div class="slots-grid" id="slots-grid"></div>
 
         <button class="btn btn-primary btn-start" id="start-btn" disabled>Lancer la partie</button>
       </div>
@@ -63,23 +67,31 @@
   const roomInfo = document.getElementById('room-info');
   const roomCodeEl = document.getElementById('room-code');
   const qrImg = document.getElementById('qr-img');
-  const playersList = document.getElementById('players-list');
-  const playerCount = document.getElementById('player-count');
+  const slotsGrid = document.getElementById('slots-grid');
   const startBtn = document.getElementById('start-btn');
   const quizPanel = document.getElementById('quiz-panel');
   const qNumEl = document.getElementById('q-num');
   const winnerBox = document.getElementById('winner-box');
   const nextBtn = document.getElementById('next-btn');
 
+  const MAX_SLOTS = 4;
   let players = [];
   let currentRoom = null;
   let currentQuestionIndex = 0;
   let currentWinner = null;
 
-  function renderPlayers(list) {
+  function renderSlots(list) {
     players = list;
-    playersList.innerHTML = players.map(p => `<li>${escapeHtml(p.name)} — ${p.score} pts</li>`).join('');
-    playerCount.textContent = players.length;
+    let html = '';
+    for (let i = 0; i < MAX_SLOTS; i++) {
+      const p = players[i];
+      if (p) {
+        html += `<div class="slot filled"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">${escapeHtml(p.name)}</div></div>`;
+      } else {
+        html += `<div class="slot robot"><div class="slot-label">Joueur ${i + 1}</div><div class="slot-name">Robot ${i + 1}</div></div>`;
+      }
+    }
+    slotsGrid.innerHTML = html;
     startBtn.disabled = players.length === 0;
   }
 
@@ -101,10 +113,10 @@
       statusMsg.style.display = 'none';
       roomInfo.style.display = 'block';
 
-      renderPlayers(await getPlayers(room.id));
+      renderSlots(await getPlayers(room.id));
 
       subscribeToRoom(room.id, {
-        onPlayersChange: async () => renderPlayers(await getPlayers(room.id)),
+        onPlayersChange: async () => renderSlots(await getPlayers(room.id)),
         onBuzz: (payload) => {
           const b = payload.new;
           if (b.question_index !== currentQuestionIndex) return;
