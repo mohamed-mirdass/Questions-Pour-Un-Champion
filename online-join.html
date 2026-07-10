@@ -289,8 +289,17 @@
   buzzBtn.addEventListener('click', async () => {
     buzzBtn.disabled = true;
     buzzStatus.textContent = 'Buzz envoye...';
+    const myQIndexAtClick = lastQIndex;
     try {
       await buzz(currentRoom.id, currentPlayer.id, lastQIndex ?? 0);
+      // Securite : si aucune reaction apres 4s (meme question, personne actif),
+      // on redonne la main au joueur pour reessayer.
+      setTimeout(() => {
+        if (lastQIndex === myQIndexAtClick && buzzBtn.disabled && buzzStatus.textContent === 'Buzz envoye...') {
+          buzzBtn.disabled = false;
+          buzzStatus.textContent = 'Pas de reponse, reessaie !';
+        }
+      }, 4000);
     } catch (err) {
       buzzStatus.textContent = '⚠️ ' + err.message;
       buzzBtn.disabled = false;
