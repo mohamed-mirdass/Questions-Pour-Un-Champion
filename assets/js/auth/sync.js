@@ -34,12 +34,27 @@ async function initSync() {
     if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
 
     updateAccountIcon(session, profile);
+    applyActiveMaster(profile.active_master);
     patchGlobalFunctions(userId);
 
     console.log('[sync] Compte connecte:', session.user.email, '- coins:', profile.coins);
   } catch (err) {
     console.error('[sync] init failed:', err);
   }
+}
+
+const MASTER_IMAGES = {
+  default: 'assets/img/quizmaster.png',
+  marcus: 'assets/img/quizmasters/marcus.png',
+  sofia: 'assets/img/quizmasters/sofia.png',
+  leonard: 'assets/img/quizmasters/leonard.png',
+  max: 'assets/img/quizmasters/max.png',
+};
+
+function applyActiveMaster(activeId) {
+  const img = document.getElementById('qmChar');
+  if (!img) return;
+  img.src = MASTER_IMAGES[activeId] || MASTER_IMAGES.default;
 }
 
 function updateAccountIcon(session, profile) {
@@ -72,10 +87,33 @@ function patchGlobalFunctions(userId) {
     const patched = function (entry) {
       const result = original(entry);
       pushHistory(userId);
+      pushXp(userId);
       return result;
     };
     patched.__patched = true;
     window.addHistory = patched;
+  }
+}
+
+const XP_PER_GAME = 20;
+async function pushXp(userId) {
+  try {
+    const { data: profile, error: fetchErr } = await supabase
+      .from('profiles')
+      .select('xp')
+      .eq('id', userId)
+      .single();
+    if (fetchErr || !profile) return;
+
+    const newXp = (profile.xp || 0) + XP_PER_GAME;
+    const newLevel = Math.min(50, Math.floor(newXp / 100) + 1);
+
+    await supabase
+      .from('profiles')
+      .update({ xp: newXp, level: newLevel, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+  } catch (err) {
+    console.error('[sync] pushXp failed:', err);
   }
 }
 
