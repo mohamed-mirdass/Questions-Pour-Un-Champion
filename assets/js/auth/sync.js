@@ -26,11 +26,14 @@ async function initSync() {
       return;
     }
 
+    // Ecrase le localStorage local avec les valeurs du cloud (source de verite
+    // quand on est connecte)
     localStorage.setItem('qpuc_coins', JSON.stringify({ coins: profile.coins, lastReset: Date.now() }));
     localStorage.setItem('qpuc_history', JSON.stringify(profile.history || []));
 
     if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
 
+    updateAccountIcon(session, profile);
     patchGlobalFunctions(userId);
 
     console.log('[sync] Compte connecte:', session.user.email, '- coins:', profile.coins);
@@ -39,7 +42,19 @@ async function initSync() {
   }
 }
 
+function updateAccountIcon(session, profile) {
+  const btn = document.getElementById('accountBtn');
+  if (!btn) return;
+  const name = profile?.display_name || session.user.email || '';
+  btn.textContent = name.trim().charAt(0).toUpperCase() || '👤';
+  btn.title = `Connecte : ${name}`;
+  btn.style.background = 'linear-gradient(135deg,var(--accent),var(--accent3))';
+  btn.style.color = '#04211d';
+  btn.style.fontWeight = '900';
+}
+
 function patchGlobalFunctions(userId) {
+  // saveCoins(amount) est appelee par addCoins()/spendCoins() dans data.js
   if (typeof window.saveCoins === 'function' && !window.saveCoins.__patched) {
     const original = window.saveCoins;
     const patched = function (amount) {
@@ -51,6 +66,7 @@ function patchGlobalFunctions(userId) {
     window.saveCoins = patched;
   }
 
+  // addHistory(entry) est appelee a la fin de chaque partie
   if (typeof window.addHistory === 'function' && !window.addHistory.__patched) {
     const original = window.addHistory;
     const patched = function (entry) {
@@ -72,7 +88,7 @@ function pushCoins(userId, coins) {
     } catch (err) {
       console.error('[sync] pushCoins failed:', err);
     }
-  }, 500);
+  }, 500); // debounce : evite trop d'ecritures si plusieurs coins arrivent d'affilee
 }
 
 async function pushHistory(userId) {
