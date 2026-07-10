@@ -386,7 +386,7 @@ body.light .rules-toc{
  
   #topbar {
     position: fixed !important;
-    top: 92px !important;
+    top: 132px !important;
     left: 0 !important;
     right: 0 !important;
     z-index: 30 !important;
@@ -414,10 +414,10 @@ body.light .rules-toc{
   }
  
   /* Content clears nav (auto height, ~84px for 2 rows) + topbar (44px) = 136px */
-  main#appRoot { padding-top: 136px !important; }
+  main#appRoot { padding-top: 176px !important; }
   .screen { padding: 16px 12px !important; }
   #gameScreen { padding-top: 12px !important; }
-  #toast { top: 140px !important; }
+  #toast { top: 180px !important; }
  
   /* === QUIZMASTER: compact on mobile so it stays visible without covering content === */
   #quizmaster-wrap { width: 84px !important; max-width: 26vw !important; left: 8px !important; bottom: 6px !important; }
