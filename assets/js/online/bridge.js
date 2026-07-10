@@ -70,7 +70,6 @@ function subscribeBridge(room, players) {
         if (idx === -1) return;
 
         if (
-          typeof gameActive !== 'undefined' && gameActive &&
           typeof currentScreen !== 'undefined' && currentScreen === 'gameScreen' &&
           typeof activePlayer !== 'undefined' && activePlayer === null &&
           typeof buzz === 'function'
