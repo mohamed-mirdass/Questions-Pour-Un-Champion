@@ -38,6 +38,7 @@ async function initOnlineBridge(code) {
 
     if (playersErr) throw playersErr;
 
+    // Remplit automatiquement les 4 champs de noms (Robot si vide)
     const ids = ['p1in', 'p2in', 'p3in', 'p4in'];
     ids.forEach((id, i) => {
       const el = document.getElementById(id);
@@ -45,7 +46,10 @@ async function initOnlineBridge(code) {
       el.value = players[i] ? players[i].name : `Robot ${i + 1}`;
     });
 
+    // Ecoute les buzz distants + les reponses distantes
     subscribeBridge(room, players);
+
+    // Diffuse l'etat du jeu local vers Supabase en continu
     startBroadcastLoop(room);
 
     console.log('[bridge] Online room connected:', room.code, 'players:', players.map(p => p.name));
@@ -83,6 +87,7 @@ function subscribeBridge(room, players) {
         const idx = players.findIndex((p) => p.id === a.player_id);
         if (idx === -1) return;
 
+        // On n'accepte la reponse que si ce joueur est bien celui qui a buzze
         if (
           typeof activePlayer !== 'undefined' && activePlayer === idx &&
           typeof currentScreen !== 'undefined' && currentScreen === 'gameScreen'
@@ -105,11 +110,11 @@ function startBroadcastLoop(room) {
     try {
       const state = buildLiveState();
       const snapshot = JSON.stringify(state);
-      if (snapshot === lastSnapshot) return;
+      if (snapshot === lastSnapshot) return; // rien de nouveau, on n'ecrit pas pour rien
       lastSnapshot = snapshot;
       updateLiveState(room.id, state);
     } catch (err) {
-      // silencieux
+      // silencieux: le jeu local n'est peut-etre pas encore charge
     }
   }, 800);
 }
@@ -146,7 +151,7 @@ function buildLiveState() {
   });
 
   if (typeof players !== 'undefined' && Array.isArray(players)) {
-    state.scores = players.map((p) => ({ name: p.name, score: p.score }));
+    state.scores = players.map((p) => ({ name: p.name, score: p.score, correct: p.correct, wrong: p.wrong }));
   }
 
   return state;
