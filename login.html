@@ -1,89 +1,24 @@
-// assets/js/auth/sync.js
-// Synchronise coins + historique avec le compte Supabase (si connecte).
-// Ne modifie jamais data.js : on lit/ecrit juste le meme localStorage
-// que data.js utilise deja (qpuc_coins, qpuc_history), et on "patch"
-// les fonctions globales existantes pour pousser chaque changement au cloud.
-
-import { supabase } from '../online/supabaseClient.js';
-
-initSync();
-
-async function initSync() {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return; // pas connecte : le jeu marche normalement en local
-
-    const userId = session.user.id;
-
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error || !profile) {
-      console.error('[sync] profile introuvable:', error);
-      return;
-    }
-
-    // Ecrase le localStorage local avec les valeurs du cloud (source de verite
-    // quand on est connecte)
-    localStorage.setItem('qpuc_coins', JSON.stringify({ coins: profile.coins, lastReset: Date.now() }));
-    localStorage.setItem('qpuc_history', JSON.stringify(profile.history || []));
-
-    if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
-
-    patchGlobalFunctions(userId);
-
-    console.log('[sync] Compte connecte:', session.user.email, '- coins:', profile.coins);
-  } catch (err) {
-    console.error('[sync] init failed:', err);
-  }
-}
-
-function patchGlobalFunctions(userId) {
-  // saveCoins(amount) est appelee par addCoins()/spendCoins() dans data.js
-  if (typeof window.saveCoins === 'function' && !window.saveCoins.__patched) {
-    const original = window.saveCoins;
-    const patched = function (amount) {
-      const result = original(amount);
-      pushCoins(userId, amount);
-      return result;
-    };
-    patched.__patched = true;
-    window.saveCoins = patched;
-  }
-
-  // addHistory(entry) est appelee a la fin de chaque partie
-  if (typeof window.addHistory === 'function' && !window.addHistory.__patched) {
-    const original = window.addHistory;
-    const patched = function (entry) {
-      const result = original(entry);
-      pushHistory(userId);
-      return result;
-    };
-    patched.__patched = true;
-    window.addHistory = patched;
-  }
-}
-
-let coinsPushTimer = null;
-function pushCoins(userId, coins) {
-  clearTimeout(coinsPushTimer);
-  coinsPushTimer = setTimeout(async () => {
-    try {
-      await supabase.from('profiles').update({ coins, updated_at: new Date().toISOString() }).eq('id', userId);
-    } catch (err) {
-      console.error('[sync] pushCoins failed:', err);
-    }
-  }, 500); // debounce : evite trop d'ecritures si plusieurs coins arrivent d'affilee
-}
-
-async function pushHistory(userId) {
-  try {
-    const history = JSON.parse(localStorage.getItem('qpuc_history') || '[]');
-    await supabase.from('profiles').update({ history, updated_at: new Date().toISOString() }).eq('id', userId);
-  } catch (err) {
-    console.error('[sync] pushHistory failed:', err);
-  }
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Mon compte</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+  .auth-wrap{width:min(420px,100%);text-align:center;margin:0 auto}
+  .auth-wrap .inp{margin:8px 0;text-align:left}
+  .auth-tabs{display:flex;gap:8px;margin-bottom:18px}
+  .auth-tab{flex:1;padding:10px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--card-border);color:var(--text-dim);font-weight:800;cursor:pointer}
+  .auth-tab.active{background:var(--accent);color:#04211d}
+  #auth-error{color:var(--danger);margin-top:10px;min-height:20px;font-weight:800;font-size:13px}
+  #auth-success{color:#2ed573;margin-top:10px;min-height:20px;font-weight:800;font-size:13px}
+  #logged-view{display:none}
+  #logged-view .coins-big{font-size:40px;font-weight:900;color:var(--gold);margin:10px 0}
+</style>
+</head>
+<body class="page-online">
+<div id="particles" aria-hidden="true"></div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link"
