@@ -21,4 +21,134 @@
 <body class="page-online">
 <div id="particles" aria-hidden="true"></div>
 <nav class="site-nav" aria-label="Navigation principale">
-  <a class="nav-link"
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="online.html" data-nav>En ligne</a>
+  <a class="nav-link" href="login.html" data-nav>Mon compte</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+  <div class="screen active">
+    <div class="card auth-wrap fade-in" id="auth-view">
+      <div class="eyebrow">Mon compte</div>
+      <h2 style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:26px;margin:6px 0 18px">Connexion</h2>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-signin">Se connecter</div>
+        <div class="auth-tab" id="tab-signup">Créer un compte</div>
+      </div>
+
+      <form id="auth-form">
+        <input id="auth-email" class="inp" type="email" placeholder="Email" required autocomplete="email">
+        <input id="auth-password" class="inp" type="password" placeholder="Mot de passe" required autocomplete="current-password" minlength="6">
+        <button type="submit" class="btn btn-primary btn-start" id="auth-submit">Se connecter</button>
+      </form>
+      <p id="auth-error"></p>
+      <p id="auth-success"></p>
+    </div>
+
+    <div class="card auth-wrap fade-in" id="logged-view">
+      <div class="eyebrow">Mon compte</div>
+      <h2 id="welcome-name" style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:26px;margin:6px 0"></h2>
+      <div class="coins-big" id="my-coins-total">0 coins</div>
+      <p style="color:var(--text-dim);font-size:13px">Tes coins et ton historique sont maintenant sauvegardés sur ton compte, meme si tu changes d'appareil.</p>
+      <button class="btn btn-primary btn-start" id="logout-btn" style="margin-top:16px">Se déconnecter</button>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { supabase } from './assets/js/online/supabaseClient.js';
+
+  const authView = document.getElementById('auth-view');
+  const loggedView = document.getElementById('logged-view');
+  const tabSignin = document.getElementById('tab-signin');
+  const tabSignup = document.getElementById('tab-signup');
+  const form = document.getElementById('auth-form');
+  const emailInput = document.getElementById('auth-email');
+  const passwordInput = document.getElementById('auth-password');
+  const submitBtn = document.getElementById('auth-submit');
+  const errorEl = document.getElementById('auth-error');
+  const successEl = document.getElementById('auth-success');
+  const welcomeName = document.getElementById('welcome-name');
+  const myCoinsTotal = document.getElementById('my-coins-total');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  let mode = 'signin';
+
+  tabSignin.addEventListener('click', () => setMode('signin'));
+  tabSignup.addEventListener('click', () => setMode('signup'));
+
+  function setMode(m) {
+    mode = m;
+    tabSignin.classList.toggle('active', m === 'signin');
+    tabSignup.classList.toggle('active', m === 'signup');
+    submitBtn.textContent = m === 'signin' ? 'Se connecter' : 'Créer le compte';
+    errorEl.textContent = '';
+    successEl.textContent = '';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.textContent = '';
+    successEl.textContent = '';
+    submitBtn.disabled = true;
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    try {
+      if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        successEl.textContent = 'Compte créé ! Tu es maintenant connecté.';
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+      await checkSession();
+    } catch (err) {
+      errorEl.textContent = translateError(err.message);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    await checkSession();
+  });
+
+  function translateError(msg) {
+    if (msg.includes('Invalid login credentials')) return 'Email ou mot de passe incorrect.';
+    if (msg.includes('already registered')) return 'Ce compte existe déjà, connecte-toi plutôt.';
+    if (msg.includes('Password should be')) return 'Le mot de passe doit faire au moins 6 caractères.';
+    return msg;
+  }
+
+  async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      authView.style.display = 'none';
+      loggedView.style.display = 'block';
+      welcomeName.textContent = `Salut ${profile?.display_name || session.user.email} !`;
+      myCoinsTotal.textContent = `${profile?.coins ?? 0} coins`;
+    } else {
+      authView.style.display = 'block';
+      loggedView.style.display = 'none';
+    }
+  }
+
+  checkSession();
+</script>
+</body>
+</html>
