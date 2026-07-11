@@ -35,6 +35,7 @@ async function initSync() {
 
     updateAccountIcon(session, profile);
     applyActiveMaster(profile.active_master);
+    applyLevelBadge(profile);
     patchGlobalFunctions(userId);
 
     console.log('[sync] Compte connecte:', session.user.email, '- coins:', profile.coins);
