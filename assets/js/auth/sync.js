@@ -34,7 +34,7 @@ async function initSync() {
     if (typeof updateCoinsDisplay === 'function') updateCoinsDisplay();
 
     updateAccountIcon(session, profile);
-    applyActiveMaster(profile.active_master);
+    applyActiveMaster(profile.active_master, profile.custom_avatar_url);
     applyLevelBadge(profile);
     patchGlobalFunctions(userId);
 
@@ -56,9 +56,13 @@ const MASTER_IMAGES = {
   walid: 'assets/img/quizmasters/walid.png',
 };
 
-function applyActiveMaster(activeId) {
+function applyActiveMaster(activeId, customUrl) {
   const img = document.getElementById('qmChar');
   if (!img) return;
+  if (activeId === 'custom' && customUrl) {
+    img.src = customUrl;
+    return;
+  }
   img.src = MASTER_IMAGES[activeId] || MASTER_IMAGES.default;
 }
 
