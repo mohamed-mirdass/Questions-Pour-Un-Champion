@@ -596,3 +596,19 @@ body.light .rules-toc{
 @keyframes qmSlideIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes qmSlideOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(24px)}}
 @keyframes qmBubblePop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+@media (min-width:901px){
+  .site-nav{
+    max-width:calc(100% - 260px);
+    flex-wrap:wrap;
+    row-gap:6px;
+  }
+  #topbar{
+    max-width:230px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    row-gap:6px;
+  }
+  main#appRoot{
+    padding-top:128px;
+  }
+}
