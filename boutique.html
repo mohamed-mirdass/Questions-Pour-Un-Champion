@@ -68,6 +68,27 @@
     box-shadow:0 6px 16px rgba(74,222,128,.4);
   }
   .not-logged{text-align:center;padding:40px}
+
+  .custom-avatar-card{margin-bottom:22px;padding:0;overflow:hidden}
+  .cac-header{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer}
+  .cac-mini-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.06);flex:0 0 auto;border:1px solid var(--card-border)}
+  .cac-header-text{flex:1}
+  .cac-title{font-weight:900;font-size:15px}
+  .cac-sub{color:var(--text-dim);font-size:12px;margin-top:2px}
+  .cac-chevron{font-size:18px;color:var(--text-dim)}
+  .cac-panel{padding:0 18px 18px;border-top:1px solid var(--card-border)}
+  .cac-preview-wrap{display:flex;justify-content:center;margin:18px 0}
+  .cac-big-avatar{width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06);box-shadow:0 14px 34px rgba(0,0,0,.3)}
+  .cac-option-group{margin-bottom:16px}
+  .cac-label{font-size:12px;font-weight:900;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .cac-row{display:flex;flex-wrap:wrap;gap:8px}
+  .swatch{border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+  .text-swatch{padding:8px 13px;border-radius:999px;background:var(--surface);color:var(--text);font-weight:800;font-size:12px;border-color:var(--card-border)}
+  .text-swatch.active{border-color:var(--accent);color:var(--accent)}
+  .color-swatch{width:34px;height:34px;border-radius:50%;border-color:var(--card-border)}
+  .color-swatch.active{border-color:#fff;transform:scale(1.12)}
+  .cac-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .cac-actions .btn{flex:1;min-width:140px}
 </style>
 </head>
 <body class="page-online">
@@ -105,6 +126,42 @@
             <div style="font-weight:800">Niveau <span id="level-num">1</span> / 50</div>
             <div class="level-bar-bg"><div class="level-bar" id="level-bar" style="width:0%"></div></div>
             <div style="color:var(--text-dim);font-size:12px;margin-top:4px" id="level-detail"></div>
+          </div>
+        </div>
+
+        <div class="card custom-avatar-card" id="custom-avatar-card">
+          <div class="cac-header" id="cac-toggle">
+            <img id="cac-preview-mini" class="cac-mini-avatar" alt="Ton avatar">
+            <div class="cac-header-text">
+              <div class="cac-title" id="cac-title">Cree ton propre Quiz Master</div>
+              <div class="cac-sub" id="cac-sub">Personnalise ton presentateur unique</div>
+            </div>
+            <div class="cac-chevron" id="cac-chevron">▾</div>
+          </div>
+          <div class="cac-panel" id="cac-panel" style="display:none;">
+            <div class="cac-preview-wrap">
+              <img id="cac-preview-big" class="cac-big-avatar" alt="Preview">
+            </div>
+            <div class="cac-option-group">
+              <div class="cac-label">Coiffure</div>
+              <div class="cac-row" id="cac-hair"></div>
+            </div>
+            <div class="cac-option-group">
+              <div class="cac-label">Teint de peau</div>
+              <div class="cac-row" id="cac-skin"></div>
+            </div>
+            <div class="cac-option-group">
+              <div class="cac-label">Barbe / Moustache</div>
+              <div class="cac-row" id="cac-facial"></div>
+            </div>
+            <div class="cac-option-group">
+              <div class="cac-label">Couleur de fond</div>
+              <div class="cac-row" id="cac-bg"></div>
+            </div>
+            <div class="cac-actions">
+              <button class="btn" type="button" id="cac-random">Aleatoire</button>
+              <button class="btn btn-primary" type="button" id="cac-save">Enregistrer et equiper</button>
+            </div>
           </div>
         </div>
 
@@ -171,6 +228,7 @@
     currentProfile = profile;
     shopContent.style.display = 'block';
     render();
+    initCustomAvatar();
   }
 
   function levelFromXp(xp) {
@@ -276,6 +334,115 @@
     } catch (err) {
       alert("Erreur : " + err.message);
     }
+  }
+
+
+  const HAIR_OPTIONS = [
+    { id: 'shortHairShortFlat', label: 'Court' },
+    { id: 'shortHairShortCurly', label: 'Boucle' },
+    { id: 'shortHairShortWaved', label: 'Ondule' },
+    { id: 'longHairStraight', label: 'Long lisse' },
+    { id: 'longHairCurly', label: 'Long boucle' },
+    { id: 'noHair', label: 'Chauve' },
+  ];
+  const SKIN_OPTIONS = ['614335', 'd08b5b', 'ae5d29', 'edb98a', 'ffdbb4', 'fd9841'];
+  const FACIAL_OPTIONS = [
+    { id: 'blank', label: 'Aucune' },
+    { id: 'beardLight', label: 'Legere' },
+    { id: 'beardMedium', label: 'Moyenne' },
+    { id: 'moustacheFancy', label: 'Moustache' },
+  ];
+  const BG_OPTIONS = ['40e0d0', '7c5cff', 'ff4d8d', 'ffd166', '1e293b', '090b10'];
+
+  let cacState = { seed: 'quizmaster', top: HAIR_OPTIONS[0].id, skin: SKIN_OPTIONS[0], facial: FACIAL_OPTIONS[0].id, bg: BG_OPTIONS[0] };
+
+  function buildAvatarUrl(state) {
+    const fp = state.facial === 'blank' ? 0 : 100;
+    return `https://api.dicebear.com/10.x/avataaars/svg?seed=${encodeURIComponent(state.seed)}&backgroundColor=${state.bg}&top=${state.top}&skinColor=${state.skin}&facialHairType=${state.facial}&facialHairProbability=${fp}`;
+  }
+
+  function renderSwatches(containerId, options, currentValue, onPick, kind) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = options.map((opt) => {
+      const value = typeof opt === 'string' ? opt : opt.id;
+      const label = typeof opt === 'string' ? '' : opt.label;
+      const active = value === currentValue;
+      if (kind === 'color') {
+        return `<button type="button" class="swatch color-swatch ${active ? 'active' : ''}" data-value="${value}" style="background:#${value}" title="${label}"></button>`;
+      }
+      return `<button type="button" class="swatch text-swatch ${active ? 'active' : ''}" data-value="${value}">${label}</button>`;
+    }).join('');
+    el.querySelectorAll('.swatch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        onPick(btn.dataset.value);
+        updateCustomAvatarUI();
+      });
+    });
+  }
+
+  function updateCustomAvatarUI() {
+    const url = buildAvatarUrl(cacState);
+    document.getElementById('cac-preview-big').src = url;
+    renderSwatches('cac-hair', HAIR_OPTIONS, cacState.top, (v) => { cacState.top = v; }, 'text');
+    renderSwatches('cac-skin', SKIN_OPTIONS, cacState.skin, (v) => { cacState.skin = v; }, 'color');
+    renderSwatches('cac-facial', FACIAL_OPTIONS, cacState.facial, (v) => { cacState.facial = v; }, 'text');
+    renderSwatches('cac-bg', BG_OPTIONS, cacState.bg, (v) => { cacState.bg = v; }, 'color');
+  }
+
+  function initCustomAvatar() {
+    const miniImg = document.getElementById('cac-preview-mini');
+    const titleEl = document.getElementById('cac-title');
+    const subEl = document.getElementById('cac-sub');
+
+    if (currentProfile.custom_avatar_url) {
+      miniImg.src = currentProfile.custom_avatar_url;
+    } else {
+      miniImg.src = buildAvatarUrl(cacState);
+    }
+
+    if (currentProfile.active_master === 'custom') {
+      titleEl.textContent = 'Ton Quiz Master personnalise';
+      subEl.textContent = 'Equipe - clique pour modifier';
+    }
+
+    updateCustomAvatarUI();
+
+    document.getElementById('cac-toggle').addEventListener('click', () => {
+      const panel = document.getElementById('cac-panel');
+      const chevron = document.getElementById('cac-chevron');
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      chevron.textContent = isOpen ? '▾' : '▴';
+    });
+
+    document.getElementById('cac-random').addEventListener('click', () => {
+      cacState.top = HAIR_OPTIONS[Math.floor(Math.random() * HAIR_OPTIONS.length)].id;
+      cacState.skin = SKIN_OPTIONS[Math.floor(Math.random() * SKIN_OPTIONS.length)];
+      cacState.facial = FACIAL_OPTIONS[Math.floor(Math.random() * FACIAL_OPTIONS.length)].id;
+      cacState.bg = BG_OPTIONS[Math.floor(Math.random() * BG_OPTIONS.length)];
+      cacState.seed = Math.random().toString(36).slice(2, 10);
+      updateCustomAvatarUI();
+    });
+
+    document.getElementById('cac-save').addEventListener('click', async () => {
+      const url = buildAvatarUrl(cacState);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ active_master: 'custom', custom_avatar_url: url })
+          .eq('id', currentUserId);
+        if (error) throw error;
+        currentProfile.active_master = 'custom';
+        currentProfile.custom_avatar_url = url;
+        miniImg.src = url;
+        titleEl.textContent = 'Ton Quiz Master personnalise';
+        subEl.textContent = 'Equipe - clique pour modifier';
+        render();
+        alert('Ton Quiz Master personnalise est maintenant equipe !');
+      } catch (err) {
+        alert("Erreur : " + err.message);
+      }
+    });
   }
 
   init();
