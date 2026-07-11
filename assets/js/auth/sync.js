@@ -50,6 +50,10 @@ const MASTER_IMAGES = {
   sofia: 'assets/img/quizmasters/sofia.png',
   leonard: 'assets/img/quizmasters/leonard.png',
   max: 'assets/img/quizmasters/max.png',
+  elhajoui: 'assets/img/quizmasters/elhajoui.png',
+  ilyass: 'assets/img/quizmasters/ilyass.png',
+  ouahbi: 'assets/img/quizmasters/ouahbi.png',
+  walid: 'assets/img/quizmasters/walid.png',
 };
 
 function applyActiveMaster(activeId) {
@@ -58,7 +62,7 @@ function applyActiveMaster(activeId) {
   img.src = MASTER_IMAGES[activeId] || MASTER_IMAGES.default;
 }
 
-  function applyLevelBadge(profile) {
+function applyLevelBadge(profile) {
   const pill = document.getElementById('playerLevelPill');
   if (!pill) return;
   const xp = profile?.xp || 0;
@@ -67,7 +71,6 @@ function applyActiveMaster(activeId) {
   if (numEl) numEl.textContent = level;
   pill.style.display = 'inline-flex';
 }
-
 
 function updateAccountIcon(session, profile) {
   const btn = document.getElementById('accountBtn');
