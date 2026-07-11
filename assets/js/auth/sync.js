@@ -35,6 +35,7 @@ async function initSync() {
 
     updateAccountIcon(session, profile);
     applyActiveMaster(profile.active_master, profile.custom_avatar_url);
+    applyAvatarFrame(profile);
     applyLevelBadge(profile);
     patchGlobalFunctions(userId);
 
@@ -64,6 +65,23 @@ function applyActiveMaster(activeId, customUrl) {
     return;
   }
   img.src = MASTER_IMAGES[activeId] || MASTER_IMAGES.default;
+}
+
+function getFrameBoxShadow(level) {
+  if (level < 7) return 'none';
+  if (level < 15) return '0 0 0 4px #cd7f32, 0 0 16px rgba(205,127,50,.5)';
+  if (level < 25) return '0 0 0 4px #c0c0c0, 0 0 16px rgba(192,192,192,.5)';
+  if (level < 35) return '0 0 0 4px #ffd700, 0 0 18px rgba(255,215,0,.55)';
+  if (level < 45) return '0 0 0 4px #7c5cff, 0 0 20px rgba(124,92,255,.6)';
+  return '0 0 0 5px #ff4d8d, 0 0 26px rgba(255,77,141,.75)';
+}
+
+function applyAvatarFrame(profile) {
+  const img = document.getElementById('qmChar');
+  if (!img) return;
+  const xp = profile?.xp || 0;
+  const level = Math.min(50, Math.floor(xp / 100) + 1);
+  img.style.boxShadow = getFrameBoxShadow(level);
 }
 
 function applyLevelBadge(profile) {
