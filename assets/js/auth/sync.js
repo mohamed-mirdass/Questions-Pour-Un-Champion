@@ -58,6 +58,17 @@ function applyActiveMaster(activeId) {
   img.src = MASTER_IMAGES[activeId] || MASTER_IMAGES.default;
 }
 
+  function applyLevelBadge(profile) {
+  const pill = document.getElementById('playerLevelPill');
+  if (!pill) return;
+  const xp = profile?.xp || 0;
+  const level = Math.min(50, Math.floor(xp / 100) + 1);
+  const numEl = document.getElementById('playerLevelNum');
+  if (numEl) numEl.textContent = level;
+  pill.style.display = 'inline-flex';
+}
+
+
 function updateAccountIcon(session, profile) {
   const btn = document.getElementById('accountBtn');
   if (!btn) return;
@@ -97,6 +108,7 @@ function patchGlobalFunctions(userId) {
 }
 
 const XP_PER_GAME = 20;
+const LEVEL_UNLOCK_MASTERS = 7;
 async function pushXp(userId) {
   try {
     const { data: profile, error: fetchErr } = await supabase
@@ -106,13 +118,19 @@ async function pushXp(userId) {
       .single();
     if (fetchErr || !profile) return;
 
-    const newXp = (profile.xp || 0) + XP_PER_GAME;
+    const oldXp = profile.xp || 0;
+    const oldLevel = Math.min(50, Math.floor(oldXp / 100) + 1);
+    const newXp = oldXp + XP_PER_GAME;
     const newLevel = Math.min(50, Math.floor(newXp / 100) + 1);
 
     await supabase
       .from('profiles')
       .update({ xp: newXp, level: newLevel, updated_at: new Date().toISOString() })
       .eq('id', userId);
+
+    if (oldLevel < LEVEL_UNLOCK_MASTERS && newLevel >= LEVEL_UNLOCK_MASTERS && typeof toast === 'function') {
+      toast('🎉 Niveau 7 atteint ! Tu peux maintenant acheter un Quiz Master dans la Boutique.', 'success', 6000);
+    }
   } catch (err) {
     console.error('[sync] pushXp failed:', err);
   }
