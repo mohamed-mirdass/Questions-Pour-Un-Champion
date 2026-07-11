@@ -338,19 +338,19 @@
 
 
   const HAIR_OPTIONS = [
-    { id: 'shortHairShortFlat', label: 'Court' },
-    { id: 'shortHairShortCurly', label: 'Boucle' },
-    { id: 'shortHairShortWaved', label: 'Ondule' },
-    { id: 'longHairStraight', label: 'Long lisse' },
-    { id: 'longHairCurly', label: 'Long boucle' },
-    { id: 'noHair', label: 'Chauve' },
+    { id: 'short1', label: 'Court' },
+    { id: 'medium1', label: 'Mi-long' },
+    { id: 'longCurly', label: 'Boucle' },
+    { id: 'bun', label: 'Chignon' },
+    { id: 'mohawk', label: 'Mohawk' },
+    { id: 'noHair1', label: 'Chauve' },
   ];
   const SKIN_OPTIONS = ['614335', 'd08b5b', 'ae5d29', 'edb98a', 'ffdbb4', 'fd9841'];
   const FACIAL_OPTIONS = [
     { id: 'blank', label: 'Aucune' },
-    { id: 'beardLight', label: 'Legere' },
-    { id: 'beardMedium', label: 'Moyenne' },
-    { id: 'moustacheFancy', label: 'Moustache' },
+    { id: 'moustache2', label: 'Moustache' },
+    { id: 'full2', label: 'Barbe' },
+    { id: 'chin', label: 'Legere' },
   ];
   const BG_OPTIONS = ['40e0d0', '7c5cff', 'ff4d8d', 'ffd166', '1e293b', '090b10'];
 
@@ -358,7 +358,20 @@
 
   function buildAvatarUrl(state) {
     const fp = state.facial === 'blank' ? 0 : 100;
-    return `https://api.dicebear.com/10.x/avataaars/svg?seed=${encodeURIComponent(state.seed)}&backgroundColor=${state.bg}&top=${state.top}&skinColor=${state.skin}&facialHairType=${state.facial}&facialHairProbability=${fp}`;
+    return `https://api.dicebear.com/10.x/open-peeps/svg?seed=${encodeURIComponent(state.seed)}&backgroundColor=${state.bg}&head=${state.top}&skinColor=${state.skin}&face=smile&facialHair=${state.facial}&facialHairProbability=${fp}`;
+  }
+
+  function levelFromXpFrame(xp) {
+    return Math.min(50, Math.floor((xp || 0) / 100) + 1);
+  }
+
+  function getFrameBoxShadow(level) {
+    if (level < 7) return 'none';
+    if (level < 15) return '0 0 0 4px #cd7f32, 0 0 16px rgba(205,127,50,.5)';
+    if (level < 25) return '0 0 0 4px #c0c0c0, 0 0 16px rgba(192,192,192,.5)';
+    if (level < 35) return '0 0 0 4px #ffd700, 0 0 18px rgba(255,215,0,.55)';
+    if (level < 45) return '0 0 0 4px #7c5cff, 0 0 20px rgba(124,92,255,.6)';
+    return '0 0 0 5px #ff4d8d, 0 0 26px rgba(255,77,141,.75)';
   }
 
   function renderSwatches(containerId, options, currentValue, onPick, kind) {
@@ -391,8 +404,13 @@
 
   function initCustomAvatar() {
     const miniImg = document.getElementById('cac-preview-mini');
+    const bigImg = document.getElementById('cac-preview-big');
     const titleEl = document.getElementById('cac-title');
     const subEl = document.getElementById('cac-sub');
+
+    const frameShadow = getFrameBoxShadow(levelFromXpFrame(currentProfile.xp));
+    miniImg.style.boxShadow = frameShadow;
+    bigImg.style.boxShadow = frameShadow;
 
     if (currentProfile.custom_avatar_url) {
       miniImg.src = currentProfile.custom_avatar_url;
