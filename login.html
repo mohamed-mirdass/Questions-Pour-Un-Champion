@@ -54,6 +54,7 @@
       <div class="eyebrow">Mon compte</div>
       <h2 id="welcome-name" style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:26px;margin:6px 0"></h2>
       <div class="coins-big" id="my-coins-total">0 coins</div>
+      <div class="player-level-pill" id="playerLevelPillAccount" style="display:none;margin:10px auto 14px;"></div>
       <p style="color:var(--text-dim);font-size:13px">Tes coins et ton historique sont maintenant sauvegardés sur ton compte, meme si tu changes d'appareil.</p>
       <button class="btn btn-primary btn-start" id="logout-btn" style="margin-top:16px">Se déconnecter</button>
     </div>
@@ -76,6 +77,7 @@
   const welcomeName = document.getElementById('welcome-name');
   const myCoinsTotal = document.getElementById('my-coins-total');
   const logoutBtn = document.getElementById('logout-btn');
+  const levelPillAccount = document.getElementById('playerLevelPillAccount');
 
   let mode = 'signin';
 
@@ -142,9 +144,14 @@
       loggedView.style.display = 'block';
       welcomeName.textContent = `Salut ${profile?.display_name || session.user.email} !`;
       myCoinsTotal.textContent = `${profile?.coins ?? 0} coins`;
+      const xp = profile?.xp || 0;
+      const lvl = Math.min(50, Math.floor(xp / 100) + 1);
+      levelPillAccount.style.display = 'inline-flex';
+      levelPillAccount.textContent = `🏅 Niveau ${lvl}/50`;
     } else {
       authView.style.display = 'block';
       loggedView.style.display = 'none';
+      if (levelPillAccount) levelPillAccount.style.display = 'none';
     }
   }
 
