@@ -19,6 +19,10 @@
   .slot-name{font-weight:800;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #status-msg{color:var(--text-dim);margin-top:14px}
   .hint{color:var(--text-dim);font-size:12px;margin-top:10px}
+  .host-join-box{margin:16px 0;padding:14px;border-radius:var(--radius);background:rgba(64,224,208,.08);border:1px solid rgba(64,224,208,.25);text-align:left}
+  .host-join-row{display:flex;gap:8px;margin-top:8px}
+  .host-join-row .inp{flex:1;margin:0}
+  #host-joined-msg{color:var(--success);font-weight:800;font-size:13px;margin-top:8px;display:none}
 </style>
 </head>
 <body class="page-online">
@@ -44,6 +48,15 @@
         <div class="qr-box"><img id="qr-img" alt="QR code pour rejoindre"></div>
         <p style="color:var(--text-dim);font-size:13px">Scanne le QR code ou va sur <code>online-join.html</code></p>
 
+        <div class="host-join-box" id="host-join-box">
+          <div style="font-weight:800;font-size:13px">Tu veux jouer aussi ?</div>
+          <div class="host-join-row">
+            <input id="host-name-input" class="inp" placeholder="Ton nom" maxlength="20" autocomplete="off">
+            <button class="btn btn-primary" id="host-join-btn" type="button">Rejoindre</button>
+          </div>
+          <p id="host-joined-msg">Tu es dans la partie !</p>
+        </div>
+
         <div class="label">Joueurs</div>
         <div class="slots-grid" id="slots-grid"></div>
 
@@ -55,7 +68,7 @@
 </main>
 
 <script type="module">
-  import { createRoom, subscribeToRoom, getPlayers, startGame } from './assets/js/online/room.js';
+  import { createRoom, subscribeToRoom, getPlayers, startGame, joinRoom } from './assets/js/online/room.js';
 
   const statusMsg = document.getElementById('status-msg');
   const roomInfo = document.getElementById('room-info');
@@ -110,6 +123,29 @@
       statusMsg.textContent = '⚠️ ' + err.message;
     }
   })();
+
+  const hostJoinBox = document.getElementById('host-join-box');
+  const hostNameInput = document.getElementById('host-name-input');
+  const hostJoinBtn = document.getElementById('host-join-btn');
+  const hostJoinedMsg = document.getElementById('host-joined-msg');
+
+  hostJoinBtn.addEventListener('click', async () => {
+    const name = hostNameInput.value.trim();
+    if (!name) {
+      hostNameInput.focus();
+      return;
+    }
+    try {
+      hostJoinBtn.disabled = true;
+      await joinRoom(currentRoom.code, name);
+      hostNameInput.disabled = true;
+      hostJoinBtn.style.display = 'none';
+      hostJoinedMsg.style.display = 'block';
+    } catch (err) {
+      alert(err.message);
+      hostJoinBtn.disabled = false;
+    }
+  });
 
   startBtn.addEventListener('click', async () => {
     try {
