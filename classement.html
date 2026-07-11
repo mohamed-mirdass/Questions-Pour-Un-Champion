@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Arena - Classement</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="icon" href="data:,">
+<style>
+  .rank-wrap{width:min(760px,100%);margin:0 auto}
+  .rank-header{text-align:center;margin-bottom:22px}
+  .rank-list{display:grid;gap:10px}
+  .rank-row{display:grid;grid-template-columns:44px 1fr auto auto;gap:14px;align-items:center;padding:14px 16px;border-radius:var(--radius);background:var(--card);border:1px solid var(--card-border)}
+  .rank-row.me{border-color:var(--accent);box-shadow:0 0 0 3px rgba(64,224,208,.15)}
+  .rank-num{font-weight:900;font-size:18px;color:var(--muted);text-align:center}
+  .rank-row.top1 .rank-num{color:#ffd166}
+  .rank-row.top2 .rank-num{color:#cfd8e3}
+  .rank-row.top3 .rank-num{color:#e8a87c}
+  .rank-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rank-name .you-tag{color:var(--accent);font-size:11px;font-weight:900;margin-left:6px}
+  .rank-games{color:var(--text-dim);font-size:12px;white-space:nowrap}
+  .rank-xp{font-weight:900;color:var(--gold);white-space:nowrap}
+  .rank-loading,.rank-empty{text-align:center;padding:40px;color:var(--text-dim)}
+</style>
+</head>
+<body class="page-classement">
+<div id="particles" aria-hidden="true"></div>
+<div id="topbar" aria-label="Actions rapides">
+  <button class="topbar-btn" onclick="showHistory()" type="button"><span>Historique</span></button>
+  <button class="topbar-btn" id="themeToggle" onclick="toggleTheme()" type="button"><span>Mode</span></button>
+  <button class="topbar-btn" id="sfxToggle" onclick="toggleSfx()" type="button"><span>🔊</span></button>
+  <a class="topbar-btn" id="accountBtn" href="login.html" style="border-radius:50%;width:38px;height:38px;padding:0;display:grid;place-items:center;font-size:14px;">👤</a>
+</div>
+<nav class="site-nav" aria-label="Navigation principale">
+  <a class="nav-link" href="index.html" data-nav>Accueil</a>
+  <a class="nav-link" href="game.html" data-nav>Partie</a>
+  <a class="nav-link" href="tournament.html" data-nav>Tournoi</a>
+  <a class="nav-link" href="mission.html" data-nav>Mission</a>
+  <a class="nav-link" href="online.html" data-nav>En ligne</a>
+  <a class="nav-link" href="boutique.html" data-nav>Boutique</a>
+  <a class="nav-link" href="classement.html" data-nav>Classement</a>
+  <a class="nav-link" href="login.html" data-nav>Mon compte</a>
+  <a class="nav-link" href="rules.html" data-nav>Règles</a>
+  <a class="nav-link" href="history.html" data-nav>Historique</a>
+</nav>
+<main id="appRoot">
+  <div class="screen active">
+    <div class="rank-wrap fade-in">
+      <div class="rank-header">
+        <div class="eyebrow">Classement</div>
+        <h2 style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:32px;margin:8px 0">🏆 Classement Mondial</h2>
+        <p style="color:var(--text-dim);font-size:14px">Les meilleurs joueurs classés par XP.</p>
+      </div>
+      <div id="rank-list" class="rank-list">
+        <div class="rank-loading">Chargement du classement...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { supabase } from './assets/js/online/supabaseClient.js';
+
+  const rankList = document.getElementById('rank-list');
+
+  async function init() {
+    let myId = null;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) myId = session.user.id;
+    } catch (e) { /* pas connecte, classement reste visible quand meme */ }
+
+    const { data, error } = await supabase.rpc('get_leaderboard');
+
+    if (error) {
+      rankList.innerHTML = `<div class="rank-empty">Impossible de charger le classement.</div>`;
+      console.error('[classement] erreur:', error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      rankList.innerHTML = `<div class="rank-empty">Aucun joueur classé pour le moment. Sois le premier !</div>`;
+      return;
+    }
+
+    let myName = null;
+    if (myId) {
+      const { data: myProfile } = await supabase.from('profiles').select('display_name').eq('id', myId).single();
+      myName = myProfile?.display_name || null;
+    }
+
+    rankList.innerHTML = data.map((row, i) => {
+      const rank = i + 1;
+      const isMe = myName && row.display_name === myName;
+      const topClass = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : '';
+      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      return `
+        <div class="rank-row ${topClass} ${isMe ? 'me' : ''}">
+          <div class="rank-num">${medal}</div>
+          <div class="rank-name">${escapeHtml(row.display_name)}${isMe ? '<span class="you-tag">TOI</span>' : ''}</div>
+          <div class="rank-games">${row.games_played} partie${row.games_played > 1 ? 's' : ''}</div>
+          <div class="rank-xp">${row.xp} XP</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  init();
+</script>
+<script defer src="assets/js/router.js"></script>
+<script defer src="assets/js/data.js"></script>
+<script defer src="assets/js/tts.js"></script>
+<script defer src="assets/js/state.js"></script>
+<script defer src="assets/js/ui.js"></script>
+<script defer src="assets/js/game.js"></script>
+<script defer src="assets/js/app.js"></script>
+<script type="module" src="assets/js/auth/sync.js"></script>
+</body>
+</html>
