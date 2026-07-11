@@ -357,8 +357,13 @@
   let cacState = { seed: 'quizmaster', top: HAIR_OPTIONS[0].id, skin: SKIN_OPTIONS[0], facial: FACIAL_OPTIONS[0].id, bg: BG_OPTIONS[0] };
 
   function buildAvatarUrl(state) {
-    const fp = state.facial === 'blank' ? 0 : 100;
-    return `https://api.dicebear.com/10.x/open-peeps/svg?seed=${encodeURIComponent(state.seed)}&backgroundColor=${state.bg}&head=${state.top}&skinColor=${state.skin}&face=smile&facialHair=${state.facial}&facialHairProbability=${fp}`;
+    let url = `https://api.dicebear.com/9.x/open-peeps/svg?seed=${encodeURIComponent(state.seed)}&backgroundColor=${state.bg}&head=${state.top}&skinColor=${state.skin}&face=smile`;
+    if (state.facial === 'blank') {
+      url += `&facialHairProbability=0`;
+    } else {
+      url += `&facialHair=${state.facial}&facialHairProbability=100`;
+    }
+    return url;
   }
 
   function levelFromXpFrame(xp) {
